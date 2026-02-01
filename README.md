@@ -41,4 +41,5 @@ Built with a production-style frontend stack and deployed on the web.
 
 
 Example:
+<img width="1919" height="951" alt="image" src="https://github.com/user-attachments/assets/6478e994-22b3-4b97-a09f-c0458700b6d3" />
 
