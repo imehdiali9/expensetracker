@@ -6,7 +6,7 @@
   justify-content: center;
   padding: 2rem;
   position: relative;
-  background: linear-gradient(135deg, var(--bg-start) 0%, var(--bg-end) 100%);
+  background: var(--bg-start);
 }
 
 /* Auth Card */
@@ -24,8 +24,9 @@
 }
 
 body.light .auth-card {
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.08);
+  background: rgba(0, 0, 0, 0.02);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  border: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 /* Auth Header */
@@ -37,7 +38,6 @@ body.light .auth-card {
 .auth-logo {
   font-size: 4rem;
   margin-bottom: 1rem;
-  filter: drop-shadow(0 4px 12px rgba(99, 102, 241, 0.3));
   animation: float 3s ease-in-out infinite;
 }
 
@@ -49,10 +49,7 @@ body.light .auth-card {
 .auth-title {
   font-size: 2.5rem;
   font-weight: 800;
-  background: linear-gradient(135deg, var(--text-primary) 0%, var(--primary-light) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
   margin-bottom: 0.5rem;
   letter-spacing: -0.02em;
 }
@@ -103,15 +100,15 @@ body.light .auth-card {
 }
 
 .auth-alert.error {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.3);
-  color: var(--danger);
+  background: transparent;
+  border: 1px solid var(--text-primary);
+  color: var(--text-primary);
 }
 
 .auth-alert.success {
-  background: rgba(16, 185, 129, 0.1);
-  border: 1px solid rgba(16, 185, 129, 0.3);
-  color: var(--success);
+  background: transparent;
+  border: 1px solid var(--text-primary);
+  color: var(--text-primary);
 }
 
 .alert-icon {
@@ -127,7 +124,7 @@ body.light .auth-card {
 .link-button {
   background: none;
   border: none;
-  color: var(--primary-light);
+  color: var(--text-primary);
   font-size: 0.9rem;
   font-weight: 600;
   cursor: pointer;
@@ -138,7 +135,7 @@ body.light .auth-card {
 }
 
 .link-button:hover {
-  color: var(--primary);
+  color: var(--text-secondary);
   text-decoration: underline;
 }
 
@@ -164,7 +161,7 @@ body.light .auth-footer {
 }
 
 .link-primary {
-  color: var(--primary-light);
+  color: var(--text-primary);
   font-weight: 700;
   text-decoration: none;
   font-size: 1rem;
@@ -175,7 +172,7 @@ body.light .auth-footer {
 }
 
 .link-primary:hover {
-  color: var(--primary);
+  color: var(--text-secondary);
   transform: translateX(3px);
 }
 

@@ -13,12 +13,157 @@ import {
   Legend,
 } from "recharts";
 import { useAuth } from "./AuthContext";
+import { supabase } from "./supabase";
 import "./App.css";
+
+// Minimal SVG Icons
+const WalletIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="2" y="5" width="20" height="14" rx="2"/>
+    <path d="M2 10h20"/>
+    <circle cx="16" cy="14" r="2"/>
+  </svg>
+);
+
+const IncomeIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 19V5M5 12l7-7 7 7"/>
+  </svg>
+);
+
+const ExpenseIcon = () => (
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 5v14M19 12l-7 7-7-7"/>
+  </svg>
+);
+
+const DashboardIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="3" y="3" width="7" height="7"/>
+    <rect x="14" y="3" width="7" height="7"/>
+    <rect x="14" y="14" width="7" height="7"/>
+    <rect x="3" y="14" width="7" height="7"/>
+  </svg>
+);
+
+const PlusIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M12 5v14M5 12h14"/>
+  </svg>
+);
+
+const TargetIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="10"/>
+    <circle cx="12" cy="12" r="6"/>
+    <circle cx="12" cy="12" r="2"/>
+  </svg>
+);
+
+const HistoryIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M3 3v18h18"/>
+    <path d="M7 12l3-3 4 4 5-5"/>
+  </svg>
+);
+
+const RepeatIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M17 2l4 4-4 4"/>
+    <path d="M3 11v-1a4 4 0 0 1 4-4h14"/>
+    <path d="M7 22l-4-4 4-4"/>
+    <path d="M21 13v1a4 4 0 0 1-4 4H3"/>
+  </svg>
+);
+
+const SunIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="12" cy="12" r="4"/>
+    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
+  </svg>
+);
+
+const MoonIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+  </svg>
+);
+
+const LogoutIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
+    <polyline points="16 17 21 12 16 7"/>
+    <line x1="21" y1="12" x2="9" y2="12"/>
+  </svg>
+);
+
+const FoodIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M18 8h1a4 4 0 0 1 0 8h-1M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z"/>
+    <line x1="6" y1="1" x2="6" y2="4"/>
+    <line x1="10" y1="1" x2="10" y2="4"/>
+    <line x1="14" y1="1" x2="14" y2="4"/>
+  </svg>
+);
+
+const TransportIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <rect x="1" y="3" width="15" height="13"/>
+    <polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/>
+    <circle cx="5.5" cy="18.5" r="2.5"/>
+    <circle cx="18.5" cy="18.5" r="2.5"/>
+  </svg>
+);
+
+const BillsIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
+  </svg>
+);
+
+const ShoppingIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <circle cx="9" cy="21" r="1"/>
+    <circle cx="20" cy="21" r="1"/>
+    <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
+  </svg>
+);
+
+const EntertainmentIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polygon points="5 3 19 12 5 21 5 3"/>
+  </svg>
+);
+
+const HealthIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+  </svg>
+);
+
+const MenuIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <line x1="3" y1="12" x2="21" y2="12"/>
+    <line x1="3" y1="6" x2="21" y2="6"/>
+    <line x1="3" y1="18" x2="21" y2="18"/>
+  </svg>
+);
+
+const TrashIcon = () => (
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+    <polyline points="3 6 5 6 21 6"/>
+    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+  </svg>
+);
 
 const COLORS = ["#6366f1", "#ec4899", "#10b981", "#f59e0b", "#8b5cf6"];
 
-const StatCard = ({ title, value, color, icon, gradient }) => (
-  <div className="stat-card group">
+const StatCard = ({ title, value, color, icon, gradient, onClick, clickable }) => (
+  <div
+    className={`stat-card group ${clickable ? 'stat-card-clickable' : ''}`}
+    onClick={onClick}
+    style={{ cursor: clickable ? 'pointer' : 'default' }}
+  >
     <div className="stat-card-inner">
       <div className="stat-icon" style={{ background: gradient }}>
         {icon}
@@ -35,11 +180,13 @@ export default function App() {
 
   const { user, logout } = useAuth();
 
-  /* DARK MODE */
+  /* SIDEBAR COLLAPSE */
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
+  /* DARK MODE */
   const [darkMode, setDarkMode] = useState(() => {
     const saved = localStorage.getItem("theme");
-    return saved ? saved === "dark" : true; // Default to dark mode
+    return saved ? saved === "dark" : true;
   });
 
   useEffect(() => {
@@ -53,8 +200,62 @@ export default function App() {
     localStorage.setItem("theme", darkMode ? "dark" : "light");
   }, [darkMode]);
 
-  /* STATE */
+  /* LOAD DATA FROM SUPABASE */
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
 
+  const loadUserData = async () => {
+    try {
+      const { data: transactionsData, error: transError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false });
+
+      if (transError) throw transError;
+      if (transactionsData) setTransactions(transactionsData);
+
+      const { data: categoriesData, error: catError } = await supabase
+        .from('categories')
+        .select('name')
+        .eq('user_id', user.id);
+
+      if (catError) throw catError;
+      if (categoriesData && categoriesData.length > 0) {
+        setCategories(categoriesData.map(c => c.name));
+      }
+
+      const { data: budgetsData, error: budgetError } = await supabase
+        .from('budgets')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (budgetError) throw budgetError;
+      if (budgetsData) {
+        const budgetsObj = {};
+        budgetsData.forEach(b => {
+          budgetsObj[b.category] = b.amount;
+        });
+        setBudgets(budgetsObj);
+      }
+
+      const { data: paymentsData, error: payError } = await supabase
+        .from('frequent_payments')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (payError) throw payError;
+      if (paymentsData) setFrequentPayments(paymentsData);
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+    }
+  };
+
+  /* STATE */
   const [activeTab, setActiveTab] = useState("dashboard");
 
   const [categories, setCategories] = useState([
@@ -82,72 +283,198 @@ export default function App() {
   const [paymentCategory, setPaymentCategory] = useState("Food");
 
   /* LOGIC */
-
-  const addTransaction = () => {
+  const addTransaction = async () => {
     if (!amount) return;
 
-    const newTransaction = {
-      id: Date.now(),
-      amount: Number(amount),
-      category: transactionCategory,
-      type,
-      date: date || new Date().toISOString().split("T")[0],
-    };
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert([{
+          user_id: user.id,
+          amount: Number(amount),
+          category: transactionCategory,
+          type: type,
+          date: date || new Date().toISOString().split('T')[0]
+        }])
+        .select();
 
-    setTransactions(prev => [...prev, newTransaction]);
+      if (error) throw error;
 
-    setAmount("");
-    setDate("");
+      if (data && data[0]) {
+        setTransactions(prev => [data[0], ...prev]);
+      }
+
+      setAmount("");
+      setDate("");
+    } catch (error) {
+      console.error('Error adding transaction:', error);
+      alert('Failed to add transaction');
+    }
   };
 
-  const deleteTransaction = (id) => {
-    setTransactions(prev => prev.filter(t => t.id !== id));
+  const deleteTransaction = async (id) => {
+    try {
+      const { error } = await supabase
+        .from('transactions')
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+
+      setTransactions(prev => prev.filter(t => t.id !== id));
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+      alert('Failed to delete transaction');
+    }
   };
 
-  const addCategory = () => {
+  const addCategory = async () => {
     if (!newCategory) return;
-    setCategories(prev => [...prev, newCategory]);
-    setNewCategory("");
+
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .insert([{ user_id: user.id, name: newCategory }]);
+
+      if (error) throw error;
+
+      setCategories(prev => [...prev, newCategory]);
+      setNewCategory("");
+    } catch (error) {
+      console.error('Error adding category:', error);
+      alert('Failed to add category');
+    }
   };
 
-  const setBudget = () => {
+  const deleteCategory = async (categoryToDelete) => {
+    const hasTransactions = transactions.some(t => t.category === categoryToDelete);
+    if (hasTransactions) {
+      alert('Cannot delete category with existing transactions');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('categories')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('name', categoryToDelete);
+
+      if (error) throw error;
+
+      setCategories(prev => prev.filter(c => c !== categoryToDelete));
+
+      await supabase
+        .from('budgets')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('category', categoryToDelete);
+
+      setBudgets(prev => {
+        const newBudgets = { ...prev };
+        delete newBudgets[categoryToDelete];
+        return newBudgets;
+      });
+    } catch (error) {
+      console.error('Error deleting category:', error);
+      alert('Failed to delete category');
+    }
+  };
+
+  const setBudget = async () => {
     if (!budgetInput) return;
 
-    setBudgets(prev => ({
-      ...prev,
-      [budgetCategory]: Number(budgetInput),
-    }));
+    try {
+      const { data: existing } = await supabase
+        .from('budgets')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('category', budgetCategory)
+        .single();
 
-    setBudgetInput("");
+      if (existing) {
+        const { error } = await supabase
+          .from('budgets')
+          .update({ amount: Number(budgetInput) })
+          .eq('id', existing.id);
+
+        if (error) throw error;
+      } else {
+        const { error } = await supabase
+          .from('budgets')
+          .insert([{
+            user_id: user.id,
+            category: budgetCategory,
+            amount: Number(budgetInput)
+          }]);
+
+        if (error) throw error;
+      }
+
+      setBudgets(prev => ({
+        ...prev,
+        [budgetCategory]: Number(budgetInput),
+      }));
+
+      setBudgetInput("");
+    } catch (error) {
+      console.error('Error setting budget:', error);
+      alert('Failed to set budget');
+    }
   };
 
-  const addFrequentPayment = () => {
+  const addFrequentPayment = async () => {
     if (!paymentName || !paymentAmount) return;
 
-    const payment = {
-      id: Date.now(),
-      name: paymentName,
-      amount: Number(paymentAmount),
-      category: paymentCategory,
-      type: "expense",
-    };
+    try {
+      const { data, error } = await supabase
+        .from('frequent_payments')
+        .insert([{
+          user_id: user.id,
+          name: paymentName,
+          amount: Number(paymentAmount),
+          category: paymentCategory,
+          type: 'expense'
+        }])
+        .select();
 
-    setFrequentPayments(prev => [...prev, payment]);
+      if (error) throw error;
 
-    setPaymentName("");
-    setPaymentAmount("");
+      if (data && data[0]) {
+        setFrequentPayments(prev => [...prev, data[0]]);
+      }
+
+      setPaymentName("");
+      setPaymentAmount("");
+    } catch (error) {
+      console.error('Error adding frequent payment:', error);
+      alert('Failed to add frequent payment');
+    }
   };
 
-  const useFrequentPayment = (payment) => {
-    const transaction = {
-      id: Date.now(),
-      amount: payment.amount,
-      category: payment.category,
-      type: payment.type,
-      date: new Date().toISOString().split("T")[0],
-    };
+  const useFrequentPayment = async (payment) => {
+    try {
+      const { data, error } = await supabase
+        .from('transactions')
+        .insert([{
+          user_id: user.id,
+          amount: payment.amount,
+          category: payment.category,
+          type: payment.type,
+          date: new Date().toISOString().split('T')[0]
+        }])
+        .select();
 
-    setTransactions(prev => [...prev, transaction]);
+      if (error) throw error;
+
+      if (data && data[0]) {
+        setTransactions(prev => [data[0], ...prev]);
+      }
+    } catch (error) {
+      console.error('Error using frequent payment:', error);
+      alert('Failed to add transaction');
+    }
   };
 
   const handleLogout = async () => {
@@ -159,7 +486,6 @@ export default function App() {
   };
 
   /* CALCULATIONS */
-
   const income = transactions
     .filter(t => t.type === "income")
     .reduce((a, t) => a + t.amount, 0);
@@ -183,36 +509,49 @@ export default function App() {
   });
 
   const categoryIcons = {
-    Food: "🍕",
-    Transport: "🚗",
-    Bills: "⚡",
-    Entertainment: "🎬",
-    Shopping: "🛍️",
-    Health: "💊",
+    Food: <FoodIcon />,
+    Transport: <TransportIcon />,
+    Bills: <BillsIcon />,
+    Entertainment: <EntertainmentIcon />,
+    Shopping: <ShoppingIcon />,
+    Health: <HealthIcon />,
   };
 
   /* UI */
-
   return (
     <div className="app-container">
-      <div className="background-gradient"></div>
+
+      {/* Credits */}
+      <div className="credits">
+        Project of Mehdi, Hafiz and Joash
+      </div>
 
       {/* SIDEBAR */}
-      <aside className="sidebar">
+      <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
+
+        {/* Header — toggle button lives HERE, moves with the sidebar */}
         <div className="sidebar-header">
-          <h1 className="sidebar-title">
-            <span className="title-icon">💰</span>
-            Smart Tracker
-          </h1>
+          {!sidebarCollapsed && (
+            <h1 className="sidebar-title">
+              <span className="title-icon"><WalletIcon /></span>
+              Smart Tracker
+            </h1>
+          )}
+          <button
+            className="menu-toggle"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          >
+            <MenuIcon />
+          </button>
         </div>
 
         <nav className="sidebar-nav">
           {[
-            { id: "dashboard", label: "Dashboard", icon: "📊" },
-            { id: "add", label: "Add Transaction", icon: "➕" },
-            { id: "budgets", label: "Budgets", icon: "🎯" },
-            { id: "history", label: "History", icon: "📜" },
-            { id: "frequent", label: "Frequent Payments", icon: "🔄" }
+            { id: "dashboard", label: "Dashboard", icon: <DashboardIcon /> },
+            { id: "add", label: "Add Transaction", icon: <PlusIcon /> },
+            { id: "budgets", label: "Budgets", icon: <TargetIcon /> },
+            { id: "history", label: "History", icon: <HistoryIcon /> },
+            { id: "frequent", label: "Frequent Payments", icon: <RepeatIcon /> }
           ].map(tab => (
             <button
               key={tab.id}
@@ -236,19 +575,13 @@ export default function App() {
             </div>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="logout-button"
-          >
-            <span className="nav-icon">🚪</span>
+          <button onClick={handleLogout} className="logout-button">
+            <span className="nav-icon"><LogoutIcon /></span>
             <span>Logout</span>
           </button>
 
-          <button
-            onClick={() => setDarkMode(!darkMode)}
-            className="theme-toggle"
-          >
-            <span className="theme-icon">{darkMode ? "☀️" : "🌙"}</span>
+          <button onClick={() => setDarkMode(!darkMode)} className="theme-toggle">
+            <span className="theme-icon">{darkMode ? <SunIcon /> : <MoonIcon />}</span>
             <span>{darkMode ? "Light Mode" : "Dark Mode"}</span>
           </button>
         </div>
@@ -266,64 +599,80 @@ export default function App() {
             </div>
 
             <div className="stats-grid">
-              <StatCard 
-                title="Total Income" 
-                value={`₹${income.toLocaleString()}`} 
+              <StatCard
+                title="Total Income"
+                value={`₹${income.toLocaleString()}`}
                 color="text-success"
-                icon="💵"
-                gradient="linear-gradient(135deg, #10b981 0%, #14b8a6 100%)"
+                icon={<IncomeIcon />}
+                gradient="linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)"
+                onClick={() => setActiveTab('history')}
+                clickable={true}
               />
-              <StatCard 
-                title="Total Expenses" 
-                value={`₹${expenses.toLocaleString()}`} 
+              <StatCard
+                title="Total Expenses"
+                value={`₹${expenses.toLocaleString()}`}
                 color="text-danger"
-                icon="💸"
-                gradient="linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)"
+                icon={<ExpenseIcon />}
+                gradient="linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)"
+                onClick={() => setActiveTab('history')}
+                clickable={true}
               />
-              <StatCard 
-                title="Balance" 
-                value={`₹${remaining.toLocaleString()}`} 
-                color={remaining >= 0 ? "text-success" : "text-danger"}
-                icon={remaining >= 0 ? "✓" : "⚠️"}
-                gradient={remaining >= 0 
-                  ? "linear-gradient(135deg, #10b981 0%, #14b8a6 100%)"
-                  : "linear-gradient(135deg, #ef4444 0%, #f59e0b 100%)"
+              <StatCard
+                title="Balance"
+                value={remaining < 0 ? `-₹${Math.abs(remaining).toLocaleString()}` : `₹${remaining.toLocaleString()}`}
+                color={remaining >= 0 ? "text-success" : "text-danger-red"}
+                icon={remaining >= 0 ? <IncomeIcon /> : <ExpenseIcon />}
+                gradient={remaining >= 0
+                  ? "linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)"
+                  : "linear-gradient(135deg, #ff0000 0%, #cc0000 100%)"
                 }
-              />
-              <StatCard 
-                title="Categories" 
-                value={categories.length} 
-                color="text-primary"
-                icon="📁"
-                gradient="linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)"
               />
             </div>
 
-            <div className="chart-container">
-              <h2 className="section-title">
-                <span className="title-accent"></span>
-                Budget vs Spending Analysis
-              </h2>
-              <ResponsiveContainer width="100%" height={350}>
-                <BarChart data={chartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)"/>
-                  <XAxis dataKey="name" stroke="#94a3b8"/>
-                  <YAxis stroke="#94a3b8"/>
-                  <Tooltip 
-                    contentStyle={{
-                      background: darkMode ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-                      border: darkMode ? '1px solid rgba(255, 255, 255, 0.1)' : '1px solid rgba(0, 0, 0, 0.1)',
-                      borderRadius: '12px',
-                      backdropFilter: 'blur(20px)',
-                      color: darkMode ? '#ffffff' : '#1a1a1a'
-                    }}
-                  />
-                  <Legend />
-                  <Bar dataKey="budget" fill="#6366f1" radius={[8, 8, 0, 0]}/>
-                  <Bar dataKey="spent" fill="#ef4444" radius={[8, 8, 0, 0]}/>
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
+            {/* Budget Progress Overview */}
+            {Object.keys(budgets).length > 0 && (
+              <div className="card">
+                <h2 className="section-title">
+                  <span className="title-accent"></span>
+                  Budget Progress
+                </h2>
+                <div className="budgets-progress-list">
+                  {Object.entries(budgets).map(([cat, amount]) => {
+                    const spent = transactions
+                      .filter(t => t.category === cat && t.type === "expense")
+                      .reduce((a, t) => a + t.amount, 0);
+                    const percentage = (spent / amount) * 100;
+
+                    return (
+                      <div key={cat} className="budget-progress-item">
+                        <div className="budget-progress-header">
+                          <div className="budget-progress-title">
+                            <span className="budget-category-name">{cat}</span>
+                            <span className="budget-progress-subtitle">
+                              {percentage > 100 ? 'Over budget' : percentage > 80 ? 'Almost there' : 'On track'}
+                            </span>
+                          </div>
+                          <div className="budget-progress-amount">
+                            <span className="budget-spent">₹{spent.toLocaleString()}</span>
+                            <span className="budget-total">/ ₹{amount.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="budget-progress-bar-container">
+                          <div
+                            className={`budget-progress-bar-fill ${percentage > 100 ? "over" : percentage > 80 ? "warning" : ""}`}
+                            style={{ width: `${Math.min(percentage, 100)}%` }}
+                          >
+                            <span className="budget-progress-percentage">
+                              {percentage.toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Recent Transactions Preview */}
             {transactions.length > 0 && (
@@ -333,10 +682,10 @@ export default function App() {
                   Recent Transactions
                 </h2>
                 <div className="transactions-preview">
-                  {transactions.slice(-5).reverse().map(t => (
+                  {transactions.slice(0, 5).map(t => (
                     <div key={t.id} className="transaction-item">
                       <div className="transaction-icon">
-                        {categoryIcons[t.category] || "💰"}
+                        {categoryIcons[t.category] || <WalletIcon />}
                       </div>
                       <div className="transaction-details">
                         <span className="transaction-category">{t.category}</span>
@@ -364,14 +713,14 @@ export default function App() {
             <div className="form-grid">
               <div className="card form-card">
                 <h2 className="card-title">
-                  <span className="title-icon">💰</span>
+                  <span className="title-icon"><WalletIcon /></span>
                   New Transaction
                 </h2>
 
                 <div className="form-group">
                   <label className="form-label">Amount</label>
-                  <input 
-                    type="number" 
+                  <input
+                    type="number"
                     placeholder="Enter amount"
                     className="form-input"
                     value={amount}
@@ -381,7 +730,7 @@ export default function App() {
 
                 <div className="form-group">
                   <label className="form-label">Date</label>
-                  <input 
+                  <input
                     type="date"
                     className="form-input"
                     value={date}
@@ -397,9 +746,7 @@ export default function App() {
                     onChange={e => setTransactionCategory(e.target.value)}
                   >
                     {categories.map(c => (
-                      <option key={c} value={c}>
-                        {categoryIcons[c] || "📁"} {c}
-                      </option>
+                      <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
                 </div>
@@ -412,63 +759,22 @@ export default function App() {
                       onClick={() => setType("expense")}
                       className={`type-button ${type === "expense" ? "active expense" : ""}`}
                     >
-                      💸 Expense
+                      <ExpenseIcon /> Expense
                     </button>
                     <button
                       type="button"
                       onClick={() => setType("income")}
                       className={`type-button ${type === "income" ? "active income" : ""}`}
                     >
-                      💵 Income
+                      <IncomeIcon /> Income
                     </button>
                   </div>
                 </div>
 
-                <button
-                  onClick={addTransaction}
-                  className="btn btn-primary"
-                >
+                <button onClick={addTransaction} className="btn btn-primary">
                   <span>Add Transaction</span>
                   <span className="btn-icon">→</span>
                 </button>
-              </div>
-
-              <div className="card form-card">
-                <h2 className="card-title">
-                  <span className="title-icon">📁</span>
-                  Create Category
-                </h2>
-
-                <div className="form-group">
-                  <label className="form-label">Category Name</label>
-                  <input
-                    placeholder="e.g., Entertainment, Health"
-                    className="form-input"
-                    value={newCategory}
-                    onChange={e => setNewCategory(e.target.value)}
-                  />
-                </div>
-
-                <button
-                  onClick={addCategory}
-                  className="btn btn-success"
-                >
-                  <span>Add Category</span>
-                  <span className="btn-icon">+</span>
-                </button>
-
-                {categories.length > 0 && (
-                  <div className="categories-list">
-                    <p className="list-label">Existing Categories</p>
-                    <div className="category-badges">
-                      {categories.map(c => (
-                        <span key={c} className="category-badge">
-                          {categoryIcons[c] || "📁"} {c}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
@@ -485,7 +791,7 @@ export default function App() {
             <div className="card">
               {transactions.length === 0 ? (
                 <div className="empty-state">
-                  <div className="empty-icon">📭</div>
+                  <div className="empty-icon"><HistoryIcon /></div>
                   <p className="empty-text">No transactions yet</p>
                   <p className="empty-subtext">Add your first transaction to get started</p>
                 </div>
@@ -501,22 +807,21 @@ export default function App() {
                         <th></th>
                       </tr>
                     </thead>
-
                     <tbody>
-                      {transactions.slice().reverse().map(t => (
+                      {transactions.map(t => (
                         <tr key={t.id}>
                           <td className="date-cell">{t.date}</td>
                           <td>
                             <div className="category-cell">
                               <span className="category-icon">
-                                {categoryIcons[t.category] || "📁"}
+                                {categoryIcons[t.category] || <WalletIcon />}
                               </span>
                               {t.category}
                             </div>
                           </td>
                           <td>
                             <span className={`type-badge ${t.type}`}>
-                              {t.type === "income" ? "💵" : "💸"} {t.type}
+                              {t.type === "income" ? <IncomeIcon /> : <ExpenseIcon />} {t.type}
                             </span>
                           </td>
                           <td className={`amount-cell ${t.type}`}>
@@ -527,7 +832,7 @@ export default function App() {
                               onClick={() => deleteTransaction(t.id)}
                               className="delete-button"
                             >
-                              🗑️
+                              ×
                             </button>
                           </td>
                         </tr>
@@ -545,13 +850,57 @@ export default function App() {
           <div className="budgets-container">
             <div className="page-header">
               <h1 className="page-title">Budget Management</h1>
-              <p className="page-subtitle">Set spending limits for each category</p>
+              <p className="page-subtitle">Set spending limits and manage categories</p>
             </div>
 
-            <div className="form-grid" style={{ maxWidth: "800px" }}>
+            <div className="budget-layout">
+              {/* Category Management */}
               <div className="card form-card">
                 <h2 className="card-title">
-                  <span className="title-icon">🎯</span>
+                  <span className="title-icon"><PlusIcon /></span>
+                  Manage Categories
+                </h2>
+
+                <div className="form-group">
+                  <label className="form-label">New Category Name</label>
+                  <input
+                    placeholder="e.g., Entertainment, Health"
+                    className="form-input"
+                    value={newCategory}
+                    onChange={e => setNewCategory(e.target.value)}
+                  />
+                </div>
+
+                <button onClick={addCategory} className="btn btn-success">
+                  <span>Add Category</span>
+                  <span className="btn-icon">+</span>
+                </button>
+
+                {categories.length > 0 && (
+                  <div className="categories-list">
+                    <p className="list-label">Existing Categories</p>
+                    <div className="category-list-items">
+                      {categories.map(c => (
+                        <div key={c} className="category-list-item">
+                          <span className="category-name">{c}</span>
+                          <button
+                            onClick={() => deleteCategory(c)}
+                            className="category-delete-btn"
+                            title="Delete category"
+                          >
+                            <TrashIcon />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Set Budget */}
+              <div className="card form-card">
+                <h2 className="card-title">
+                  <span className="title-icon"><TargetIcon /></span>
                   Set Budget
                 </h2>
 
@@ -563,9 +912,7 @@ export default function App() {
                     onChange={e => setBudgetCategory(e.target.value)}
                   >
                     {categories.map(c => (
-                      <option key={c} value={c}>
-                        {categoryIcons[c] || "📁"} {c}
-                      </option>
+                      <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
                 </div>
@@ -581,58 +928,61 @@ export default function App() {
                   />
                 </div>
 
-                <button
-                  onClick={setBudget}
-                  className="btn btn-primary"
-                >
+                <button onClick={setBudget} className="btn btn-primary">
                   <span>Set Budget</span>
                   <span className="btn-icon">✓</span>
                 </button>
               </div>
+            </div>
 
-              <div className="card">
-                <h2 className="card-title">
-                  <span className="title-icon">📊</span>
-                  Current Budgets
-                </h2>
+            {/* Budget Progress Bars */}
+            <div className="card" style={{ marginTop: '2rem' }}>
+              <h2 className="section-title">
+                <span className="title-accent"></span>
+                Budget Overview
+              </h2>
 
-                {Object.keys(budgets).length === 0 ? (
-                  <div className="empty-state-small">
-                    <p>No budgets set yet</p>
-                  </div>
-                ) : (
-                  <div className="budgets-list">
-                    {Object.entries(budgets).map(([cat, amount]) => {
-                      const spent = transactions
-                        .filter(t => t.category === cat && t.type === "expense")
-                        .reduce((a, t) => a + t.amount, 0);
-                      const percentage = (spent / amount) * 100;
+              {Object.keys(budgets).length === 0 ? (
+                <div className="empty-state-small">
+                  <p>No budgets set yet</p>
+                </div>
+              ) : (
+                <div className="budgets-progress-list">
+                  {Object.entries(budgets).map(([cat, amount]) => {
+                    const spent = transactions
+                      .filter(t => t.category === cat && t.type === "expense")
+                      .reduce((a, t) => a + t.amount, 0);
+                    const percentage = (spent / amount) * 100;
 
-                      return (
-                        <div key={cat} className="budget-item">
-                          <div className="budget-header">
-                            <span className="budget-category">
-                              {categoryIcons[cat] || "📁"} {cat}
-                            </span>
-                            <span className="budget-amount">
-                              ₹{spent} / ₹{amount}
+                    return (
+                      <div key={cat} className="budget-progress-item">
+                        <div className="budget-progress-header">
+                          <div className="budget-progress-title">
+                            <span className="budget-category-name">{cat}</span>
+                            <span className="budget-progress-subtitle">
+                              {percentage > 100 ? 'Over budget' : percentage > 80 ? 'Almost there' : 'On track'}
                             </span>
                           </div>
-                          <div className="budget-bar">
-                            <div 
-                              className={`budget-progress ${percentage > 100 ? "over" : ""}`}
-                              style={{ width: `${Math.min(percentage, 100)}%` }}
-                            ></div>
+                          <div className="budget-progress-amount">
+                            <span className="budget-spent">₹{spent.toLocaleString()}</span>
+                            <span className="budget-total">/ ₹{amount.toLocaleString()}</span>
                           </div>
-                          <span className={`budget-percentage ${percentage > 100 ? "over" : ""}`}>
-                            {percentage.toFixed(0)}% used
-                          </span>
                         </div>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+                        <div className="budget-progress-bar-container">
+                          <div
+                            className={`budget-progress-bar-fill ${percentage > 100 ? "over" : percentage > 80 ? "warning" : ""}`}
+                            style={{ width: `${Math.min(percentage, 100)}%` }}
+                          >
+                            <span className="budget-progress-percentage">
+                              {percentage.toFixed(0)}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -648,7 +998,7 @@ export default function App() {
             <div className="form-grid" style={{ maxWidth: "800px" }}>
               <div className="card form-card">
                 <h2 className="card-title">
-                  <span className="title-icon">🔄</span>
+                  <span className="title-icon"><RepeatIcon /></span>
                   Add Frequent Payment
                 </h2>
 
@@ -681,17 +1031,12 @@ export default function App() {
                     onChange={(e) => setPaymentCategory(e.target.value)}
                   >
                     {categories.map(c => (
-                      <option key={c} value={c}>
-                        {categoryIcons[c] || "📁"} {c}
-                      </option>
+                      <option key={c} value={c}>{c}</option>
                     ))}
                   </select>
                 </div>
 
-                <button
-                  onClick={addFrequentPayment}
-                  className="btn btn-primary"
-                >
+                <button onClick={addFrequentPayment} className="btn btn-primary">
                   <span>Save Payment</span>
                   <span className="btn-icon">+</span>
                 </button>
@@ -699,7 +1044,7 @@ export default function App() {
 
               <div className="card">
                 <h2 className="card-title">
-                  <span className="title-icon">💾</span>
+                  <span className="title-icon"><HistoryIcon /></span>
                   Saved Payments
                 </h2>
 
@@ -712,7 +1057,7 @@ export default function App() {
                     {frequentPayments.map(p => (
                       <div key={p.id} className="frequent-item">
                         <div className="frequent-icon">
-                          {categoryIcons[p.category] || "💰"}
+                          {categoryIcons[p.category] || <WalletIcon />}
                         </div>
                         <div className="frequent-details">
                           <span className="frequent-name">{p.name}</span>
