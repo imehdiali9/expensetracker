@@ -142,7 +142,7 @@ const HealthIcon = () => (
 );
 
 const MenuIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
     <line x1="3" y1="12" x2="21" y2="12"/>
     <line x1="3" y1="6" x2="21" y2="6"/>
     <line x1="3" y1="18" x2="21" y2="18"/>
@@ -176,12 +176,30 @@ const StatCard = ({ title, value, color, icon, gradient, onClick, clickable }) =
   </div>
 );
 
+// ─── Logout Confirmation Modal ────────────────────────
+const LogoutModal = ({ onConfirm, onCancel }) => (
+  <div className="modal-backdrop" onClick={onCancel}>
+    <div className="modal-card" onClick={e => e.stopPropagation()}>
+      <div className="modal-icon"><LogoutIcon /></div>
+      <div className="modal-title">Sign out?</div>
+      <div className="modal-subtitle">You'll need to sign back in to access your financial data.</div>
+      <div className="modal-actions">
+        <button className="modal-btn-cancel" onClick={onCancel}>Cancel</button>
+        <button className="modal-btn-confirm" onClick={onConfirm}>Sign out</button>
+      </div>
+    </div>
+  </div>
+);
+
 export default function App() {
 
   const { user, logout } = useAuth();
 
   /* SIDEBAR COLLAPSE */
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+
+  /* LOGOUT MODAL */
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
 
   /* DARK MODE */
   const [darkMode, setDarkMode] = useState(() => {
@@ -285,7 +303,6 @@ export default function App() {
   /* LOGIC */
   const addTransaction = async () => {
     if (!amount) return;
-
     try {
       const { data, error } = await supabase
         .from('transactions')
@@ -297,13 +314,8 @@ export default function App() {
           date: date || new Date().toISOString().split('T')[0]
         }])
         .select();
-
       if (error) throw error;
-
-      if (data && data[0]) {
-        setTransactions(prev => [data[0], ...prev]);
-      }
-
+      if (data && data[0]) setTransactions(prev => [data[0], ...prev]);
       setAmount("");
       setDate("");
     } catch (error) {
@@ -319,9 +331,7 @@ export default function App() {
         .delete()
         .eq('id', id)
         .eq('user_id', user.id);
-
       if (error) throw error;
-
       setTransactions(prev => prev.filter(t => t.id !== id));
     } catch (error) {
       console.error('Error deleting transaction:', error);
@@ -331,14 +341,11 @@ export default function App() {
 
   const addCategory = async () => {
     if (!newCategory) return;
-
     try {
       const { error } = await supabase
         .from('categories')
         .insert([{ user_id: user.id, name: newCategory }]);
-
       if (error) throw error;
-
       setCategories(prev => [...prev, newCategory]);
       setNewCategory("");
     } catch (error) {
@@ -353,24 +360,15 @@ export default function App() {
       alert('Cannot delete category with existing transactions');
       return;
     }
-
     try {
       const { error } = await supabase
         .from('categories')
         .delete()
         .eq('user_id', user.id)
         .eq('name', categoryToDelete);
-
       if (error) throw error;
-
       setCategories(prev => prev.filter(c => c !== categoryToDelete));
-
-      await supabase
-        .from('budgets')
-        .delete()
-        .eq('user_id', user.id)
-        .eq('category', categoryToDelete);
-
+      await supabase.from('budgets').delete().eq('user_id', user.id).eq('category', categoryToDelete);
       setBudgets(prev => {
         const newBudgets = { ...prev };
         delete newBudgets[categoryToDelete];
@@ -384,7 +382,6 @@ export default function App() {
 
   const setBudget = async () => {
     if (!budgetInput) return;
-
     try {
       const { data: existing } = await supabase
         .from('budgets')
@@ -392,31 +389,14 @@ export default function App() {
         .eq('user_id', user.id)
         .eq('category', budgetCategory)
         .single();
-
       if (existing) {
-        const { error } = await supabase
-          .from('budgets')
-          .update({ amount: Number(budgetInput) })
-          .eq('id', existing.id);
-
+        const { error } = await supabase.from('budgets').update({ amount: Number(budgetInput) }).eq('id', existing.id);
         if (error) throw error;
       } else {
-        const { error } = await supabase
-          .from('budgets')
-          .insert([{
-            user_id: user.id,
-            category: budgetCategory,
-            amount: Number(budgetInput)
-          }]);
-
+        const { error } = await supabase.from('budgets').insert([{ user_id: user.id, category: budgetCategory, amount: Number(budgetInput) }]);
         if (error) throw error;
       }
-
-      setBudgets(prev => ({
-        ...prev,
-        [budgetCategory]: Number(budgetInput),
-      }));
-
+      setBudgets(prev => ({ ...prev, [budgetCategory]: Number(budgetInput) }));
       setBudgetInput("");
     } catch (error) {
       console.error('Error setting budget:', error);
@@ -426,25 +406,13 @@ export default function App() {
 
   const addFrequentPayment = async () => {
     if (!paymentName || !paymentAmount) return;
-
     try {
       const { data, error } = await supabase
         .from('frequent_payments')
-        .insert([{
-          user_id: user.id,
-          name: paymentName,
-          amount: Number(paymentAmount),
-          category: paymentCategory,
-          type: 'expense'
-        }])
+        .insert([{ user_id: user.id, name: paymentName, amount: Number(paymentAmount), category: paymentCategory, type: 'expense' }])
         .select();
-
       if (error) throw error;
-
-      if (data && data[0]) {
-        setFrequentPayments(prev => [...prev, data[0]]);
-      }
-
+      if (data && data[0]) setFrequentPayments(prev => [...prev, data[0]]);
       setPaymentName("");
       setPaymentAmount("");
     } catch (error) {
@@ -457,32 +425,27 @@ export default function App() {
     try {
       const { data, error } = await supabase
         .from('transactions')
-        .insert([{
-          user_id: user.id,
-          amount: payment.amount,
-          category: payment.category,
-          type: payment.type,
-          date: new Date().toISOString().split('T')[0]
-        }])
+        .insert([{ user_id: user.id, amount: payment.amount, category: payment.category, type: payment.type, date: new Date().toISOString().split('T')[0] }])
         .select();
-
       if (error) throw error;
-
-      if (data && data[0]) {
-        setTransactions(prev => [data[0], ...prev]);
-      }
+      if (data && data[0]) setTransactions(prev => [data[0], ...prev]);
     } catch (error) {
       console.error('Error using frequent payment:', error);
       alert('Failed to add transaction');
     }
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
+    setShowLogoutModal(true);
+  };
+
+  const handleLogoutConfirm = async () => {
     try {
       await logout();
     } catch (error) {
       console.error("Failed to logout:", error);
     }
+    setShowLogoutModal(false);
   };
 
   /* CALCULATIONS */
@@ -500,12 +463,7 @@ export default function App() {
     const spent = transactions
       .filter(t => t.category === cat && t.type === "expense")
       .reduce((a, t) => a + t.amount, 0);
-
-    return {
-      name: cat,
-      spent,
-      budget: budgets[cat] || 0,
-    };
+    return { name: cat, spent, budget: budgets[cat] || 0 };
   });
 
   const categoryIcons = {
@@ -521,6 +479,14 @@ export default function App() {
   return (
     <div className="app-container">
 
+      {/* Logout Modal */}
+      {showLogoutModal && (
+        <LogoutModal
+          onConfirm={handleLogoutConfirm}
+          onCancel={() => setShowLogoutModal(false)}
+        />
+      )}
+
       {/* Credits */}
       <div className="credits">
         Project of Mehdi, Hafiz and Joash
@@ -528,8 +494,6 @@ export default function App() {
 
       {/* SIDEBAR */}
       <aside className={`sidebar ${sidebarCollapsed ? 'collapsed' : ''}`}>
-
-        {/* Header — toggle button lives HERE, moves with the sidebar */}
         <div className="sidebar-header">
           {!sidebarCollapsed && (
             <h1 className="sidebar-title">
@@ -599,58 +563,30 @@ export default function App() {
             </div>
 
             <div className="stats-grid">
-              <StatCard
-                title="Total Income"
-                value={`₹${income.toLocaleString()}`}
-                color="text-success"
-                icon={<IncomeIcon />}
-                gradient="linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)"
-                onClick={() => setActiveTab('history')}
-                clickable={true}
-              />
-              <StatCard
-                title="Total Expenses"
-                value={`₹${expenses.toLocaleString()}`}
-                color="text-danger"
-                icon={<ExpenseIcon />}
-                gradient="linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)"
-                onClick={() => setActiveTab('history')}
-                clickable={true}
-              />
+              <StatCard title="Total Income" value={`₹${income.toLocaleString()}`} color="text-success" icon={<IncomeIcon />} gradient="linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)" onClick={() => setActiveTab('history')} clickable={true} />
+              <StatCard title="Total Expenses" value={`₹${expenses.toLocaleString()}`} color="text-danger" icon={<ExpenseIcon />} gradient="linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)" onClick={() => setActiveTab('history')} clickable={true} />
               <StatCard
                 title="Balance"
                 value={remaining < 0 ? `-₹${Math.abs(remaining).toLocaleString()}` : `₹${remaining.toLocaleString()}`}
                 color={remaining >= 0 ? "text-success" : "text-danger-red"}
                 icon={remaining >= 0 ? <IncomeIcon /> : <ExpenseIcon />}
-                gradient={remaining >= 0
-                  ? "linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)"
-                  : "linear-gradient(135deg, #ff0000 0%, #cc0000 100%)"
-                }
+                gradient={remaining >= 0 ? "linear-gradient(135deg, #ffffff 0%, #e0e0e0 100%)" : "linear-gradient(135deg, #ff0000 0%, #cc0000 100%)"}
               />
             </div>
 
-            {/* Budget Progress Overview */}
             {Object.keys(budgets).length > 0 && (
               <div className="card">
-                <h2 className="section-title">
-                  <span className="title-accent"></span>
-                  Budget Progress
-                </h2>
+                <h2 className="section-title"><span className="title-accent"></span>Budget Progress</h2>
                 <div className="budgets-progress-list">
                   {Object.entries(budgets).map(([cat, amount]) => {
-                    const spent = transactions
-                      .filter(t => t.category === cat && t.type === "expense")
-                      .reduce((a, t) => a + t.amount, 0);
+                    const spent = transactions.filter(t => t.category === cat && t.type === "expense").reduce((a, t) => a + t.amount, 0);
                     const percentage = (spent / amount) * 100;
-
                     return (
                       <div key={cat} className="budget-progress-item">
                         <div className="budget-progress-header">
                           <div className="budget-progress-title">
                             <span className="budget-category-name">{cat}</span>
-                            <span className="budget-progress-subtitle">
-                              {percentage > 100 ? 'Over budget' : percentage > 80 ? 'Almost there' : 'On track'}
-                            </span>
+                            <span className="budget-progress-subtitle">{percentage > 100 ? 'Over budget' : percentage > 80 ? 'Almost there' : 'On track'}</span>
                           </div>
                           <div className="budget-progress-amount">
                             <span className="budget-spent">₹{spent.toLocaleString()}</span>
@@ -658,13 +594,8 @@ export default function App() {
                           </div>
                         </div>
                         <div className="budget-progress-bar-container">
-                          <div
-                            className={`budget-progress-bar-fill ${percentage > 100 ? "over" : percentage > 80 ? "warning" : ""}`}
-                            style={{ width: `${Math.min(percentage, 100)}%` }}
-                          >
-                            <span className="budget-progress-percentage">
-                              {percentage.toFixed(0)}%
-                            </span>
+                          <div className={`budget-progress-bar-fill ${percentage > 100 ? "over" : percentage > 80 ? "warning" : ""}`} style={{ width: `${Math.min(percentage, 100)}%` }}>
+                            <span className="budget-progress-percentage">{percentage.toFixed(0)}%</span>
                           </div>
                         </div>
                       </div>
@@ -674,19 +605,13 @@ export default function App() {
               </div>
             )}
 
-            {/* Recent Transactions Preview */}
             {transactions.length > 0 && (
               <div className="card">
-                <h2 className="section-title">
-                  <span className="title-accent"></span>
-                  Recent Transactions
-                </h2>
+                <h2 className="section-title"><span className="title-accent"></span>Recent Transactions</h2>
                 <div className="transactions-preview">
                   {transactions.slice(0, 5).map(t => (
                     <div key={t.id} className="transaction-item">
-                      <div className="transaction-icon">
-                        {categoryIcons[t.category] || <WalletIcon />}
-                      </div>
+                      <div className="transaction-icon">{categoryIcons[t.category] || <WalletIcon />}</div>
                       <div className="transaction-details">
                         <span className="transaction-category">{t.category}</span>
                         <span className="transaction-date">{t.date}</span>
@@ -709,72 +634,31 @@ export default function App() {
               <h1 className="page-title">Add Transaction</h1>
               <p className="page-subtitle">Record your income or expenses</p>
             </div>
-
             <div className="form-grid">
               <div className="card form-card">
-                <h2 className="card-title">
-                  <span className="title-icon"><WalletIcon /></span>
-                  New Transaction
-                </h2>
-
+                <h2 className="card-title"><span className="title-icon"><WalletIcon /></span>New Transaction</h2>
                 <div className="form-group">
                   <label className="form-label">Amount</label>
-                  <input
-                    type="number"
-                    placeholder="Enter amount"
-                    className="form-input"
-                    value={amount}
-                    onChange={e => setAmount(e.target.value)}
-                  />
+                  <input type="number" placeholder="Enter amount" className="form-input" value={amount} onChange={e => setAmount(e.target.value)} />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Date</label>
-                  <input
-                    type="date"
-                    className="form-input"
-                    value={date}
-                    onChange={(e) => setDate(e.target.value)}
-                  />
+                  <input type="date" className="form-input" value={date} onChange={(e) => setDate(e.target.value)} />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Category</label>
-                  <select
-                    className="form-select"
-                    value={transactionCategory}
-                    onChange={e => setTransactionCategory(e.target.value)}
-                  >
-                    {categories.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                  <select className="form-select" value={transactionCategory} onChange={e => setTransactionCategory(e.target.value)}>
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Type</label>
                   <div className="type-selector">
-                    <button
-                      type="button"
-                      onClick={() => setType("expense")}
-                      className={`type-button ${type === "expense" ? "active expense" : ""}`}
-                    >
-                      <ExpenseIcon /> Expense
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setType("income")}
-                      className={`type-button ${type === "income" ? "active income" : ""}`}
-                    >
-                      <IncomeIcon /> Income
-                    </button>
+                    <button type="button" onClick={() => setType("expense")} className={`type-button ${type === "expense" ? "active expense" : ""}`}><ExpenseIcon /> Expense</button>
+                    <button type="button" onClick={() => setType("income")} className={`type-button ${type === "income" ? "active income" : ""}`}><IncomeIcon /> Income</button>
                   </div>
                 </div>
-
-                <button onClick={addTransaction} className="btn btn-primary">
-                  <span>Add Transaction</span>
-                  <span className="btn-icon">→</span>
-                </button>
+                <button onClick={addTransaction} className="btn btn-primary"><span>Add Transaction</span><span className="btn-icon">→</span></button>
               </div>
             </div>
           </div>
@@ -787,7 +671,6 @@ export default function App() {
               <h1 className="page-title">Transaction History</h1>
               <p className="page-subtitle">View all your transactions</p>
             </div>
-
             <div className="card">
               {transactions.length === 0 ? (
                 <div className="empty-state">
@@ -799,42 +682,16 @@ export default function App() {
                 <div className="table-container">
                   <table className="transactions-table">
                     <thead>
-                      <tr>
-                        <th>Date</th>
-                        <th>Category</th>
-                        <th>Type</th>
-                        <th>Amount</th>
-                        <th></th>
-                      </tr>
+                      <tr><th>Date</th><th>Category</th><th>Type</th><th>Amount</th><th></th></tr>
                     </thead>
                     <tbody>
                       {transactions.map(t => (
                         <tr key={t.id}>
                           <td className="date-cell">{t.date}</td>
-                          <td>
-                            <div className="category-cell">
-                              <span className="category-icon">
-                                {categoryIcons[t.category] || <WalletIcon />}
-                              </span>
-                              {t.category}
-                            </div>
-                          </td>
-                          <td>
-                            <span className={`type-badge ${t.type}`}>
-                              {t.type === "income" ? <IncomeIcon /> : <ExpenseIcon />} {t.type}
-                            </span>
-                          </td>
-                          <td className={`amount-cell ${t.type}`}>
-                            {t.type === "income" ? "+" : "-"}₹{t.amount}
-                          </td>
-                          <td>
-                            <button
-                              onClick={() => deleteTransaction(t.id)}
-                              className="delete-button"
-                            >
-                              ×
-                            </button>
-                          </td>
+                          <td><div className="category-cell"><span className="category-icon">{categoryIcons[t.category] || <WalletIcon />}</span>{t.category}</div></td>
+                          <td><span className={`type-badge ${t.type}`}>{t.type === "income" ? <IncomeIcon /> : <ExpenseIcon />} {t.type}</span></td>
+                          <td className={`amount-cell ${t.type}`}>{t.type === "income" ? "+" : "-"}₹{t.amount}</td>
+                          <td><button onClick={() => deleteTransaction(t.id)} className="delete-button">×</button></td>
                         </tr>
                       ))}
                     </tbody>
@@ -852,30 +709,14 @@ export default function App() {
               <h1 className="page-title">Budget Management</h1>
               <p className="page-subtitle">Set spending limits and manage categories</p>
             </div>
-
             <div className="budget-layout">
-              {/* Category Management */}
               <div className="card form-card">
-                <h2 className="card-title">
-                  <span className="title-icon"><PlusIcon /></span>
-                  Manage Categories
-                </h2>
-
+                <h2 className="card-title"><span className="title-icon"><PlusIcon /></span>Manage Categories</h2>
                 <div className="form-group">
                   <label className="form-label">New Category Name</label>
-                  <input
-                    placeholder="e.g., Entertainment, Health"
-                    className="form-input"
-                    value={newCategory}
-                    onChange={e => setNewCategory(e.target.value)}
-                  />
+                  <input placeholder="e.g., Entertainment, Health" className="form-input" value={newCategory} onChange={e => setNewCategory(e.target.value)} />
                 </div>
-
-                <button onClick={addCategory} className="btn btn-success">
-                  <span>Add Category</span>
-                  <span className="btn-icon">+</span>
-                </button>
-
+                <button onClick={addCategory} className="btn btn-success"><span>Add Category</span><span className="btn-icon">+</span></button>
                 {categories.length > 0 && (
                   <div className="categories-list">
                     <p className="list-label">Existing Categories</p>
@@ -883,85 +724,43 @@ export default function App() {
                       {categories.map(c => (
                         <div key={c} className="category-list-item">
                           <span className="category-name">{c}</span>
-                          <button
-                            onClick={() => deleteCategory(c)}
-                            className="category-delete-btn"
-                            title="Delete category"
-                          >
-                            <TrashIcon />
-                          </button>
+                          <button onClick={() => deleteCategory(c)} className="category-delete-btn" title="Delete category"><TrashIcon /></button>
                         </div>
                       ))}
                     </div>
                   </div>
                 )}
               </div>
-
-              {/* Set Budget */}
               <div className="card form-card">
-                <h2 className="card-title">
-                  <span className="title-icon"><TargetIcon /></span>
-                  Set Budget
-                </h2>
-
+                <h2 className="card-title"><span className="title-icon"><TargetIcon /></span>Set Budget</h2>
                 <div className="form-group">
                   <label className="form-label">Category</label>
-                  <select
-                    className="form-select"
-                    value={budgetCategory}
-                    onChange={e => setBudgetCategory(e.target.value)}
-                  >
-                    {categories.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                  <select className="form-select" value={budgetCategory} onChange={e => setBudgetCategory(e.target.value)}>
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Budget Amount</label>
-                  <input
-                    type="number"
-                    placeholder="Enter budget limit"
-                    className="form-input"
-                    value={budgetInput}
-                    onChange={e => setBudgetInput(e.target.value)}
-                  />
+                  <input type="number" placeholder="Enter budget limit" className="form-input" value={budgetInput} onChange={e => setBudgetInput(e.target.value)} />
                 </div>
-
-                <button onClick={setBudget} className="btn btn-primary">
-                  <span>Set Budget</span>
-                  <span className="btn-icon">✓</span>
-                </button>
+                <button onClick={setBudget} className="btn btn-primary"><span>Set Budget</span><span className="btn-icon">✓</span></button>
               </div>
             </div>
-
-            {/* Budget Progress Bars */}
             <div className="card" style={{ marginTop: '2rem' }}>
-              <h2 className="section-title">
-                <span className="title-accent"></span>
-                Budget Overview
-              </h2>
-
+              <h2 className="section-title"><span className="title-accent"></span>Budget Overview</h2>
               {Object.keys(budgets).length === 0 ? (
-                <div className="empty-state-small">
-                  <p>No budgets set yet</p>
-                </div>
+                <div className="empty-state-small"><p>No budgets set yet</p></div>
               ) : (
                 <div className="budgets-progress-list">
                   {Object.entries(budgets).map(([cat, amount]) => {
-                    const spent = transactions
-                      .filter(t => t.category === cat && t.type === "expense")
-                      .reduce((a, t) => a + t.amount, 0);
+                    const spent = transactions.filter(t => t.category === cat && t.type === "expense").reduce((a, t) => a + t.amount, 0);
                     const percentage = (spent / amount) * 100;
-
                     return (
                       <div key={cat} className="budget-progress-item">
                         <div className="budget-progress-header">
                           <div className="budget-progress-title">
                             <span className="budget-category-name">{cat}</span>
-                            <span className="budget-progress-subtitle">
-                              {percentage > 100 ? 'Over budget' : percentage > 80 ? 'Almost there' : 'On track'}
-                            </span>
+                            <span className="budget-progress-subtitle">{percentage > 100 ? 'Over budget' : percentage > 80 ? 'Almost there' : 'On track'}</span>
                           </div>
                           <div className="budget-progress-amount">
                             <span className="budget-spent">₹{spent.toLocaleString()}</span>
@@ -969,13 +768,8 @@ export default function App() {
                           </div>
                         </div>
                         <div className="budget-progress-bar-container">
-                          <div
-                            className={`budget-progress-bar-fill ${percentage > 100 ? "over" : percentage > 80 ? "warning" : ""}`}
-                            style={{ width: `${Math.min(percentage, 100)}%` }}
-                          >
-                            <span className="budget-progress-percentage">
-                              {percentage.toFixed(0)}%
-                            </span>
+                          <div className={`budget-progress-bar-fill ${percentage > 100 ? "over" : percentage > 80 ? "warning" : ""}`} style={{ width: `${Math.min(percentage, 100)}%` }}>
+                            <span className="budget-progress-percentage">{percentage.toFixed(0)}%</span>
                           </div>
                         </div>
                       </div>
@@ -994,84 +788,39 @@ export default function App() {
               <h1 className="page-title">Frequent Payments</h1>
               <p className="page-subtitle">Save and quickly add recurring expenses</p>
             </div>
-
             <div className="form-grid" style={{ maxWidth: "800px" }}>
               <div className="card form-card">
-                <h2 className="card-title">
-                  <span className="title-icon"><RepeatIcon /></span>
-                  Add Frequent Payment
-                </h2>
-
+                <h2 className="card-title"><span className="title-icon"><RepeatIcon /></span>Add Frequent Payment</h2>
                 <div className="form-group">
                   <label className="form-label">Payment Name</label>
-                  <input
-                    placeholder="e.g., Netflix Subscription"
-                    value={paymentName}
-                    onChange={(e) => setPaymentName(e.target.value)}
-                    className="form-input"
-                  />
+                  <input placeholder="e.g., Netflix Subscription" value={paymentName} onChange={(e) => setPaymentName(e.target.value)} className="form-input" />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Amount</label>
-                  <input
-                    type="number"
-                    placeholder="Enter amount"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(e.target.value)}
-                    className="form-input"
-                  />
+                  <input type="number" placeholder="Enter amount" value={paymentAmount} onChange={(e) => setPaymentAmount(e.target.value)} className="form-input" />
                 </div>
-
                 <div className="form-group">
                   <label className="form-label">Category</label>
-                  <select
-                    className="form-select"
-                    value={paymentCategory}
-                    onChange={(e) => setPaymentCategory(e.target.value)}
-                  >
-                    {categories.map(c => (
-                      <option key={c} value={c}>{c}</option>
-                    ))}
+                  <select className="form-select" value={paymentCategory} onChange={(e) => setPaymentCategory(e.target.value)}>
+                    {categories.map(c => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-
-                <button onClick={addFrequentPayment} className="btn btn-primary">
-                  <span>Save Payment</span>
-                  <span className="btn-icon">+</span>
-                </button>
+                <button onClick={addFrequentPayment} className="btn btn-primary"><span>Save Payment</span><span className="btn-icon">+</span></button>
               </div>
-
               <div className="card">
-                <h2 className="card-title">
-                  <span className="title-icon"><HistoryIcon /></span>
-                  Saved Payments
-                </h2>
-
+                <h2 className="card-title"><span className="title-icon"><HistoryIcon /></span>Saved Payments</h2>
                 {frequentPayments.length === 0 ? (
-                  <div className="empty-state-small">
-                    <p>No saved payments yet</p>
-                  </div>
+                  <div className="empty-state-small"><p>No saved payments yet</p></div>
                 ) : (
                   <div className="frequent-list">
                     {frequentPayments.map(p => (
                       <div key={p.id} className="frequent-item">
-                        <div className="frequent-icon">
-                          {categoryIcons[p.category] || <WalletIcon />}
-                        </div>
+                        <div className="frequent-icon">{categoryIcons[p.category] || <WalletIcon />}</div>
                         <div className="frequent-details">
                           <span className="frequent-name">{p.name}</span>
-                          <span className="frequent-meta">
-                            {p.category} • ₹{p.amount}
-                          </span>
+                          <span className="frequent-meta">{p.category} • ₹{p.amount}</span>
                         </div>
-                        <button
-                          onClick={() => useFrequentPayment(p)}
-                          className="btn-quick-add"
-                        >
-                          <span>Quick Add</span>
-                          <span>→</span>
-                        </button>
+                        <button onClick={() => useFrequentPayment(p)} className="btn-quick-add"><span>Quick Add</span><span>→</span></button>
                       </div>
                     ))}
                   </div>

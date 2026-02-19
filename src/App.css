@@ -1482,8 +1482,126 @@ body.light .btn-quick-add:hover {
   color: var(--text-muted);
 }
 
-/* Responsive */
-@media (max-width: 1024px) {
+/* ─── Logout Modal ───────────────────────────────────── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(6px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  animation: fadeIn 0.2s ease-out;
+}
+
+body.light .modal-backdrop {
+  background: rgba(0, 0, 0, 0.35);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.modal-card {
+  background: var(--bg-start);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 360px;
+  box-shadow: var(--shadow-lg);
+  animation: modalPop 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.light .modal-card {
+  background: #ffffff;
+}
+
+@keyframes modalPop {
+  from { opacity: 0; transform: scale(0.95) translateY(10px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0);    }
+}
+
+.modal-icon {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.25rem;
+  color: var(--text-primary);
+}
+
+.modal-title {
+  font-size: 1.25rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.5rem;
+}
+
+.modal-subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 1.75rem;
+  line-height: 1.5;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.modal-btn-cancel {
+  flex: 1;
+  padding: 0.875rem;
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition-base);
+  font-family: 'Outfit', sans-serif;
+}
+
+.modal-btn-cancel:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+body.light .modal-btn-cancel:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.modal-btn-confirm {
+  flex: 1;
+  padding: 0.875rem;
+  background: var(--text-primary);
+  border: none;
+  border-radius: 12px;
+  color: var(--bg-start);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition-base);
+  font-family: 'Outfit', sans-serif;
+}
+
+.modal-btn-confirm:hover {
+  opacity: 0.8;
+  transform: translateY(-1px);
+}
+
+/* ─── Responsive ─────────────────────────────────────── */
+
+/* Large tablet (≤1100px) — sidebar gets a bit narrower */
+@media (max-width: 1100px) {
   .sidebar {
     width: 240px;
   }
@@ -1492,58 +1610,244 @@ body.light .btn-quick-add:hover {
     padding: 2rem;
   }
 
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  }
+
   .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-layout {
     grid-template-columns: 1fr;
   }
 }
 
+/* Small tablet (≤768px) — sidebar collapses to icons only */
 @media (max-width: 768px) {
-  .app-container {
-    flex-direction: column;
-  }
-
   .sidebar {
-    width: 100%;
-    min-height: auto;
-    position: relative;
-    padding: 1.5rem;
+    width: 70px;
+    min-width: 70px;
+    padding: 1.5rem 0.6rem;
+    flex-shrink: 0;
   }
 
-  .sidebar-nav {
-    flex-direction: row;
-    overflow-x: auto;
-    gap: 0.5rem;
+  /* Centre the toggle button when collapsed */
+  .sidebar-header {
+    justify-content: center;
+    margin-bottom: 2rem;
   }
 
-  .nav-button {
-    flex-direction: column;
-    padding: 1rem;
-    min-width: 100px;
-    text-align: center;
+  /* Hide text, keep icons */
+  .sidebar-title,
+  .nav-label,
+  .user-name,
+  .user-email,
+  .logout-button > span:last-child,
+  .theme-toggle > span:last-child {
+    display: none !important;
   }
 
-  .nav-label {
-    font-size: 0.75rem;
+  .user-profile {
+    justify-content: center;
+    padding: 0.5rem;
+  }
+
+  .nav-button,
+  .logout-button,
+  .theme-toggle {
+    justify-content: center;
+    padding: 0.875rem 0.5rem;
+  }
+
+  /* Credits hidden on mobile */
+  .credits {
+    display: none;
   }
 
   .main-content {
-    padding: 1.5rem;
+    padding: 1.25rem;
   }
 
   .page-title {
-    font-size: 2rem;
+    font-size: 1.75rem;
+  }
+
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .stat-card {
+    padding: 1.25rem;
+  }
+
+  .stat-value {
+    font-size: 1.5rem;
+  }
+
+  .form-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .budget-layout {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+
+  .card {
+    padding: 1.25rem;
+    border-radius: 16px;
+  }
+
+  /* Table scrolls horizontally */
+  .table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .transactions-table {
+    min-width: 500px;
+  }
+
+  /* Budget progress amounts stack */
+  .budget-progress-header {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .budget-progress-amount {
+    align-items: flex-start;
+  }
+
+  .budget-spent {
+    font-size: 1.1rem;
+  }
+
+  /* Frequent payments wrap */
+  .frequent-item {
+    flex-wrap: wrap;
+    gap: 0.75rem;
+  }
+
+  .btn-quick-add {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Phone (≤480px) — sidebar even slimmer, single column everything */
+@media (max-width: 480px) {
+  .sidebar {
+    width: 56px;
+    min-width: 56px;
+    padding: 1rem 0.4rem;
+  }
+
+  .nav-button,
+  .logout-button,
+  .theme-toggle {
+    padding: 0.75rem 0.25rem;
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    font-size: 1rem;
+  }
+
+  .main-content {
+    padding: 1rem 0.875rem;
+  }
+
+  .page-title {
+    font-size: 1.4rem;
+  }
+
+  .page-subtitle {
+    font-size: 0.875rem;
+  }
+
+  .page-header {
+    margin-bottom: 1.25rem;
   }
 
   .stats-grid {
     grid-template-columns: 1fr;
+    gap: 0.6rem;
   }
 
-  .table-container {
-    overflow-x: scroll;
+  .stat-card-inner {
+    gap: 1rem;
   }
 
-  .transactions-table {
-    min-width: 600px;
+  .stat-icon {
+    width: 48px;
+    height: 48px;
+  }
+
+  .card {
+    padding: 1rem;
+    border-radius: 14px;
+  }
+
+  .section-title {
+    font-size: 1.1rem;
+  }
+
+  .card-title {
+    font-size: 1rem;
+  }
+
+  /* Transaction items compact */
+  .transaction-icon {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 10px;
+  }
+
+  .transaction-amount {
+    font-size: 1rem;
+  }
+
+  /* Budget bar height reduced */
+  .budget-progress-bar-container {
+    height: 30px;
+  }
+
+  .budget-category-name {
+    font-size: 1rem;
+  }
+
+  /* Form inputs comfortable on small screens */
+  .form-input,
+  .form-select {
+    padding: 0.875rem 1rem;
+    font-size: 0.95rem;
+  }
+
+  .btn {
+    padding: 0.875rem 1rem;
+    font-size: 0.9rem;
+  }
+
+  /* Modal fits small screens */
+  .modal-card {
+    padding: 1.5rem;
+    border-radius: 16px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .modal-btn-cancel,
+  .modal-btn-confirm {
+    width: 100%;
   }
 }
 
