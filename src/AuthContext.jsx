@@ -3,6 +3,7 @@ import { supabase } from './supabase';
 
 const AuthContext = createContext({});
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
@@ -62,18 +63,33 @@ export const AuthProvider = ({ children }) => {
 
   // Listen for auth state changes
   useEffect(() => {
-    // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    // Timeout fallback: if Supabase doesn't respond in 3s, render the app anyway
+    const timeout = setTimeout(() => {
       setLoading(false);
-    });
+    }, 3000);
+
+    // Get initial session
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null);
+        setLoading(false);
+        clearTimeout(timeout);
+      })
+      .catch((err) => {
+        console.warn('Failed to get session:', err);
+        setLoading(false);
+        clearTimeout(timeout);
+      });
 
     // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      clearTimeout(timeout);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const value = {

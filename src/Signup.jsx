@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from './AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
-import './Auth.css';
 
 export default function Signup() {
   const [email, setEmail] = useState('');
@@ -16,19 +15,10 @@ export default function Signup() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    // Validation
-    if (password !== confirmPassword) {
-      return setError('Passwords do not match');
-    }
-
-    if (password.length < 6) {
-      return setError('Password must be at least 6 characters');
-    }
-
+    if (password !== confirmPassword) return setError('Passwords do not match');
+    if (password.length < 6) return setError('Password must be at least 6 characters');
     try {
-      setError('');
-      setLoading(true);
+      setError(''); setLoading(true);
       await signup(email, password, displayName);
       navigate('/');
     } catch (err) {
@@ -38,87 +28,82 @@ export default function Signup() {
   };
 
   return (
-    <div className="auth-container">
-      <div className="background-gradient"></div>
-      
-      <div className="auth-card">
-        <div className="auth-header">
-          <div className="auth-logo">💰</div>
-          <h1 className="auth-title">Create Account</h1>
-          <p className="auth-subtitle">Start tracking your expenses today</p>
-        </div>
+    <div className="fixed inset-0 bg-[#f7f9ff] font-body text-on-background overflow-auto">
+      {/* Background Effects */}
+      <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-[-10%] right-[-5%] w-[400px] h-[400px] rounded-full bg-primary-container/10 blur-[120px]" />
+        <div className="absolute bottom-[-10%] left-[-5%] w-[500px] h-[500px] rounded-full bg-surface-container-high/40 blur-[100px]" />
+      </div>
 
-        {error && (
-          <div className="auth-alert error">
-            <span className="alert-icon">⚠️</span>
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label className="form-label">Full Name</label>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="John Doe"
-              value={displayName}
-              onChange={(e) => setDisplayName(e.target.value)}
-              required
-            />
+      {/* Centered Content */}
+      <div className="relative z-10 min-h-full flex items-center justify-center px-4 py-8">
+        <div className="w-full max-w-[400px]">
+          {/* Branding */}
+          <div className="mb-6 text-center">
+            <div className="inline-flex items-center justify-center w-11 h-11 bg-primary-container rounded-xl mb-4" style={{ boxShadow: '0 8px 24px -6px rgba(0,109,55,0.15)' }}>
+              <span className="material-symbols-outlined text-on-primary-container text-xl" style={{ fontVariationSettings: "'FILL' 1" }}>account_balance</span>
+            </div>
+            <h1 className="font-headline text-2xl font-extrabold tracking-tight text-on-surface mb-1">The Ledger</h1>
+            <p className="font-label text-[11px] uppercase tracking-[0.2em] text-on-surface-variant/60">Wealth Architecture</p>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Email Address</label>
-            <input
-              type="email"
-              className="form-input"
-              placeholder="your@email.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+          {/* Card */}
+          <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-[0_4px_24px_-4px_rgba(9,29,46,0.08)]">
+            <h2 className="font-headline text-lg font-bold text-on-surface mb-5">Create Your Account</h2>
+
+            {error && (
+              <div className="mb-5 p-3 rounded-lg bg-error-container text-on-error-container text-sm font-medium flex items-center gap-2">
+                <span className="material-symbols-outlined text-base flex-shrink-0">error</span>
+                <span className="text-xs">{error}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-1.5">
+                <label htmlFor="name" className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">Full Name</label>
+                <input id="name" type="text"
+                  className="w-full h-11 px-3.5 bg-surface-container-low border-none rounded-lg text-sm text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                  placeholder="Alex Sterling" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="email" className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">Email Address</label>
+                <input id="email" type="email"
+                  className="w-full h-11 px-3.5 bg-surface-container-low border-none rounded-lg text-sm text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                  placeholder="name@firm.com" value={email} onChange={(e) => setEmail(e.target.value)} required />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="password" className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">Password</label>
+                <input id="password" type="password"
+                  className="w-full h-11 px-3.5 bg-surface-container-low border-none rounded-lg text-sm text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                  placeholder="••••••••" value={password} onChange={(e) => setPassword(e.target.value)} required />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="confirm" className="font-label text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider block">Confirm Password</label>
+                <input id="confirm" type="password"
+                  className="w-full h-11 px-3.5 bg-surface-container-low border-none rounded-lg text-sm text-on-surface placeholder:text-outline/50 focus:ring-2 focus:ring-primary/20 transition-all"
+                  placeholder="••••••••" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required />
+              </div>
+
+              <button type="submit" disabled={loading}
+                className="w-full h-11 bg-gradient-to-r from-primary to-primary-container text-on-primary font-headline font-bold text-sm rounded-full hover:opacity-90 active:scale-[0.98] transition-all disabled:opacity-50 shadow-md shadow-primary/10 mt-2">
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </button>
+            </form>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Password</label>
-            <input
-              type="password"
-              className="form-input"
-              placeholder="••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          <div className="mt-6 text-center">
+            <p className="text-sm text-on-surface-variant">
+              Already have an account?
+              <Link to="/login" className="text-primary font-bold hover:underline ml-1">Sign In</Link>
+            </p>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Confirm Password</label>
-            <input
-              type="password"
-              className="form-input"
-              placeholder="••••••••"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <button 
-            type="submit" 
-            className="btn btn-primary"
-            disabled={loading}
-          >
-            <span>{loading ? 'Creating Account...' : 'Create Account'}</span>
-            <span className="btn-icon">→</span>
-          </button>
-        </form>
-
-        <div className="auth-footer">
-          <p>Already have an account?</p>
-          <Link to="/login" className="link-primary">
-            Sign In →
-          </Link>
+          <p className="font-label text-[9px] uppercase tracking-[0.15em] text-outline/60 text-center mt-8">
+            © 2024 The Ledger. Wealth Architecture.
+          </p>
         </div>
       </div>
     </div>
