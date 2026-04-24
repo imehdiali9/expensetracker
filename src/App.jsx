@@ -74,7 +74,43 @@ export default function App() {
   const [paymentName, setPaymentName] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentCategory, setPaymentCategory] = useState("Food");
-  const [avatarUrlInput, setAvatarUrlInput] = useState("");
+  const [localAvatarUrl, setLocalAvatarUrl] = useState(() => user ? localStorage.getItem(`avatar_${user.id}`) : null);
+
+  useEffect(() => {
+    if (user) setLocalAvatarUrl(localStorage.getItem(`avatar_${user.id}`));
+  }, [user]);
+
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = async () => {
+        const canvas = document.createElement("canvas");
+        const ctx = canvas.getContext("2d");
+        const MAX_SIZE = 150;
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
+        } else {
+          if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
+        }
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+        const base64Url = canvas.toDataURL("image/jpeg", 0.8);
+        localStorage.setItem(`avatar_${user.id}`, base64Url);
+        setLocalAvatarUrl(base64Url);
+        setToast("Profile picture uploaded!");
+        setTimeout(() => setToast(""), 3000);
+        try { await updateProfile({ custom_avatar_url: base64Url }); } catch (e) {}
+      };
+      img.src = event.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
   
   const [toast, setToast] = useState("");
 
@@ -249,7 +285,7 @@ export default function App() {
   const displayName = user?.user_metadata?.display_name || user?.user_metadata?.full_name || "User";
   const userEmail = user?.email || "";
   const avatarLetter = displayName.charAt(0).toUpperCase();
-  const avatarUrl = user?.user_metadata?.custom_avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const avatarUrl = localAvatarUrl || user?.user_metadata?.custom_avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
   /* DARK MODE CLASSES */
   const dm = darkMode;
@@ -1026,31 +1062,29 @@ export default function App() {
                     </h4>
                     <div className="space-y-3">
                       <div className={`flex items-center justify-between p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
-                        <div className="flex flex-col w-full gap-2">
-                          <label className={`font-bold text-sm ${textPrimary}`}>Profile Picture URL</label>
-                          <div className="flex gap-2">
-                            <input 
-                              type="text" 
-                              placeholder="Paste image URL..." 
-                              className={`flex-1 ${inputBg} border-none rounded-lg px-3 py-2 text-sm ${textPrimary} focus:ring-2 focus:ring-primary/20`}
-                              value={avatarUrlInput}
-                              onChange={e => setAvatarUrlInput(e.target.value)}
+                        <div className="flex flex-col w-full gap-3">
+                          <label className={`font-bold text-sm ${textPrimary}`}>Profile Picture</label>
+                          <div className="flex items-center gap-4">
+                            {avatarUrl ? (
+                              <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-full object-cover shadow-sm" />
+                            ) : (
+                              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-xl">
+                                {avatarLetter}
+                              </div>
+                            )}
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleImageUpload}
+                              className="hidden"
+                              id="avatar-upload"
                             />
-                            <button 
-                              onClick={async () => {
-                                if(!avatarUrlInput) return;
-                                try {
-                                  await updateProfile({ custom_avatar_url: avatarUrlInput });
-                                  setToast("Profile picture updated!");
-                                  setAvatarUrlInput("");
-                                } catch(e) {
-                                  setToast("Error updating picture");
-                                }
-                                setTimeout(() => setToast(""), 3000);
-                              }}
-                              className={`bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-all flex-shrink-0`}>
-                              Update
-                            </button>
+                            <label
+                              htmlFor="avatar-upload"
+                              className={`px-4 py-2 ${cardBg} border ${borderColor} ${textPrimary} font-bold text-sm rounded-lg hover:opacity-80 cursor-pointer transition-all shadow-sm`}
+                            >
+                              Upload Image
+                            </label>
                           </div>
                         </div>
                       </div>
