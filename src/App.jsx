@@ -75,6 +75,7 @@ export default function App() {
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentCategory, setPaymentCategory] = useState("Food");
   const [localAvatarUrl, setLocalAvatarUrl] = useState(() => user ? localStorage.getItem(`avatar_${user.id}`) : null);
+  const [displayNameInput, setDisplayNameInput] = useState("");
 
   useEffect(() => {
     if (user) setLocalAvatarUrl(localStorage.getItem(`avatar_${user.id}`));
@@ -356,13 +357,15 @@ export default function App() {
             <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-full ${textSecondary}`}>
               <Icon name={darkMode ? "light_mode" : "dark_mode"} className="text-xl" />
             </button>
-            {avatarUrl ? (
-              <img src={avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover shadow-sm" />
-            ) : (
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-xs">
-                {avatarLetter}
-              </div>
-            )}
+            <div onClick={() => setActiveTab("profile")} className="cursor-pointer">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover shadow-sm" />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-xs">
+                  {avatarLetter}
+                </div>
+              )}
+            </div>
           </div>
         </header>
         <nav className={`flex overflow-x-auto gap-1 px-2 py-2 ${sidebarBg} ${borderColor} border-b hide-scrollbar`}>
@@ -1059,7 +1062,34 @@ export default function App() {
                       Account
                     </h4>
                     <div className="space-y-3">
-                      <div className={`flex items-center justify-between p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
+                      <div className={`flex flex-col gap-5 p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
+                        <div className="flex flex-col w-full gap-3">
+                          <label className={`font-bold text-sm ${textPrimary}`}>Display Name</label>
+                          <div className="flex gap-2">
+                            <input 
+                              type="text" 
+                              placeholder="Enter your name..." 
+                              className={`flex-1 ${inputBg} border-none rounded-lg px-3 py-2 text-sm ${textPrimary} focus:ring-2 focus:ring-primary/20`}
+                              value={displayNameInput || displayName}
+                              onChange={e => setDisplayNameInput(e.target.value)}
+                            />
+                            <button 
+                              onClick={async () => {
+                                if(!displayNameInput || displayNameInput === displayName) return;
+                                try {
+                                  await updateProfile({ display_name: displayNameInput });
+                                  setToast("Name updated!");
+                                } catch(e) {
+                                  setToast("Error updating name");
+                                }
+                                setTimeout(() => setToast(""), 3000);
+                              }}
+                              className={`bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-all flex-shrink-0`}>
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                        <div className="w-full h-px bg-slate-200 dark:bg-[#40485d]/30"></div>
                         <div className="flex flex-col w-full gap-3">
                           <label className={`font-bold text-sm ${textPrimary}`}>Profile Picture</label>
                           <div className="flex items-center gap-4">
