@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { supabase } from "./supabase";
 
 const Icon = ({ name, filled, className = "" }) => (
   <span
@@ -29,25 +30,33 @@ export default function App() {
   }, [darkMode]);
 
   /* STATE */
-  const getSaved = (key, defaultVal) => {
-    if (!user) return defaultVal;
-    const saved = localStorage.getItem(`${user.id}_${key}`);
-    return saved ? JSON.parse(saved) : defaultVal;
-  };
-
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [categories, setCategories] = useState(() => getSaved("categories", ["Food", "Transport", "Bills", "General"]));
-  const [transactions, setTransactions] = useState(() => getSaved("transactions", []));
-  const [budgets, setBudgets] = useState(() => getSaved("budgets", {}));
-  const [frequentPayments, setFrequentPayments] = useState(() => getSaved("frequent", []));
+  const [categories, setCategories] = useState(["Food", "Transport", "Bills", "General"]);
+  const [transactions, setTransactions] = useState([]);
+  const [budgets, setBudgets] = useState({});
+  const [frequentPayments, setFrequentPayments] = useState([]);
 
   useEffect(() => {
     if (!user) return;
-    localStorage.setItem(`${user.id}_categories`, JSON.stringify(categories));
-    localStorage.setItem(`${user.id}_transactions`, JSON.stringify(transactions));
-    localStorage.setItem(`${user.id}_budgets`, JSON.stringify(budgets));
-    localStorage.setItem(`${user.id}_frequent`, JSON.stringify(frequentPayments));
-  }, [categories, transactions, budgets, frequentPayments, user]);
+    const fetchData = async () => {
+      const { data: txs } = await supabase.from("transactions").select("*").eq("user_id", user.id);
+      if (txs) setTransactions(txs);
+
+      const { data: cats } = await supabase.from("categories").select("*").eq("user_id", user.id);
+      if (cats && cats.length > 0) setCategories(cats.map(c => c.name || c.category || c.title || "Unnamed"));
+
+      const { data: bgts } = await supabase.from("budgets").select("*").eq("user_id", user.id);
+      if (bgts && bgts.length > 0) {
+        const bObj = {};
+        bgts.forEach(b => { bObj[b.category] = b.amount; });
+        setBudgets(bObj);
+      }
+
+      const { data: freqs } = await supabase.from("frequent_payments").select("*").eq("user_id", user.id);
+      if (freqs) setFrequentPayments(freqs);
+    };
+    fetchData();
+  }, [user]);
 
   const [amount, setAmount] = useState("");
   const [transactionCategory, setTransactionCategory] = useState("Food");
@@ -75,17 +84,23 @@ export default function App() {
   const [sortOrder, setSortOrder] = useState("newest"); // newest | oldest | highest | lowest
 
   /* LOGIC */
-  const addTransaction = () => {
+  const addTransaction = async () => {
     if (!amount) return;
-    const newTransaction = {
-      id: Date.now(),
+    const newTx = {
+      user_id: user.id,
       amount: Number(amount),
       category: transactionCategory,
       type,
       date: date || new Date().toISOString().split("T")[0],
       description: description || transactionCategory,
     };
-    setTransactions((prev) => [...prev, newTransaction]);
+    const { data, error } = await supabase.from('transactions').insert([newTx]).select();
+    if (error) {
+      setToast("Error: " + error.message);
+      setTimeout(() => setToast(""), 4000);
+      return;
+    }
+    setTransactions((prev) => [...prev, data[0]]);
     setAmount("");
     setDate("");
     setDescription("");
@@ -93,37 +108,66 @@ export default function App() {
     setTimeout(() => setToast(""), 3000);
   };
 
-  const deleteTransaction = (id) => {
+  const deleteTransaction = async (id) => {
+    const { error } = await supabase.from('transactions').delete().eq('id', id);
+    if (error) {
+      setToast("Error: " + error.message);
+      setTimeout(() => setToast(""), 4000);
+      return;
+    }
     setTransactions((prev) => prev.filter((t) => t.id !== id));
   };
 
-  const addCategory = () => {
+  const addCategory = async () => {
     if (!newCategory || categories.includes(newCategory)) return;
+    const { error } = await supabase.from('categories').insert([{ user_id: user.id, name: newCategory }]);
+    if (error) {
+      setToast("Error: " + error.message);
+      setTimeout(() => setToast(""), 4000);
+      return;
+    }
     setCategories((prev) => [...prev, newCategory]);
     setNewCategory("");
   };
 
-  const setBudget = () => {
+  const setBudget = async () => {
     if (!budgetInput) return;
+    await supabase.from('budgets').delete().eq('user_id', user.id).eq('category', budgetCategory);
+    const { error } = await supabase.from('budgets').insert([{ user_id: user.id, category: budgetCategory, amount: Number(budgetInput) }]);
+    if (error) {
+      setToast("Error: " + error.message);
+      setTimeout(() => setToast(""), 4000);
+      return;
+    }
     setBudgets((prev) => ({ ...prev, [budgetCategory]: Number(budgetInput) }));
     setBudgetInput("");
   };
 
-  const addFrequentPayment = () => {
+  const addFrequentPayment = async () => {
     if (!paymentName || !paymentAmount) return;
-    setFrequentPayments((prev) => [
-      ...prev,
-      { id: Date.now(), name: paymentName, amount: Number(paymentAmount), category: paymentCategory, type: "expense" },
-    ]);
+    const newPayment = { user_id: user.id, name: paymentName, amount: Number(paymentAmount), category: paymentCategory, type: "expense" };
+    const { data, error } = await supabase.from('frequent_payments').insert([newPayment]).select();
+    if (error) {
+      setToast("Error: " + error.message);
+      setTimeout(() => setToast(""), 4000);
+      return;
+    }
+    setFrequentPayments((prev) => [...prev, data[0]]);
     setPaymentName("");
     setPaymentAmount("");
   };
 
-  const handleFrequentPayment = (payment) => {
-    setTransactions((prev) => [
-      ...prev,
-      { id: Date.now(), amount: payment.amount, category: payment.category, type: payment.type, date: new Date().toISOString().split("T")[0], description: payment.name },
-    ]);
+  const handleFrequentPayment = async (payment) => {
+    const newTx = { user_id: user.id, amount: payment.amount, category: payment.category, type: payment.type || 'expense', date: new Date().toISOString().split("T")[0], description: payment.name };
+    const { data, error } = await supabase.from('transactions').insert([newTx]).select();
+    if (error) {
+      setToast("Error: " + error.message);
+      setTimeout(() => setToast(""), 4000);
+      return;
+    }
+    setTransactions((prev) => [...prev, data[0]]);
+    setToast(`Template added successfully!`);
+    setTimeout(() => setToast(""), 3000);
   };
 
   const handleLogout = async () => {
