@@ -1,5 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
+import jsPDF from "jspdf";
+import "jspdf-autotable";
 
 const Icon = ({ name, filled, className = "" }) => (
   <span
@@ -11,7 +13,7 @@ const Icon = ({ name, filled, className = "" }) => (
 );
 
 export default function App() {
-  const { user, logout } = useAuth();
+  const { user, logout, updateProfile } = useAuth();
 
   /* DARK MODE */
   const [darkMode, setDarkMode] = useState(() => {
@@ -28,7 +30,7 @@ export default function App() {
 
   /* STATE */
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [categories, setCategories] = useState(["Food", "Transport", "Bills"]);
+  const [categories, setCategories] = useState(["Food", "Transport", "Bills", "General"]);
   const [transactions, setTransactions] = useState([]);
   const [budgets, setBudgets] = useState({});
 
@@ -46,6 +48,17 @@ export default function App() {
   const [paymentName, setPaymentName] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentCategory, setPaymentCategory] = useState("Food");
+  const [avatarUrlInput, setAvatarUrlInput] = useState("");
+  
+  const [toast, setToast] = useState("");
+
+  /* SEARCH & FILTER */
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filterType, setFilterType] = useState("all"); // all | income | expense
+  const [filterCategory, setFilterCategory] = useState("all");
+  const [filterDateFrom, setFilterDateFrom] = useState("");
+  const [filterDateTo, setFilterDateTo] = useState("");
+  const [sortOrder, setSortOrder] = useState("newest"); // newest | oldest | highest | lowest
 
   /* LOGIC */
   const addTransaction = () => {
@@ -101,6 +114,53 @@ export default function App() {
     try { await logout(); } catch (e) { console.warn("Logout:", e.message || e); }
   };
 
+  const downloadPDF = (period) => {
+    const now = new Date();
+    const filtered = transactions.filter(t => {
+      if (period === 'all') return true;
+      const tDate = new Date(t.date);
+      const diffTime = Math.abs(now - tDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      if (period === 'daily') return diffDays <= 1;
+      if (period === 'weekly') return diffDays <= 7;
+      if (period === 'monthly') return diffDays <= 30;
+      return true;
+    });
+
+    if (filtered.length === 0) {
+      setToast(`No transactions found for ${period} period.`);
+      setTimeout(() => setToast(""), 3000);
+      return;
+    }
+
+    const doc = new jsPDF();
+    doc.text(`Transactions Statement (${period.toUpperCase()})`, 14, 15);
+    
+    const tableColumn = ["Date", "Type", "Category", "Description", "Amount (Rs)"];
+    const tableRows = [];
+
+    filtered.forEach(t => {
+      const rowData = [
+        t.date,
+        t.type,
+        t.category,
+        t.description || '',
+        t.amount
+      ];
+      tableRows.push(rowData);
+    });
+
+    doc.autoTable({
+      head: [tableColumn],
+      body: tableRows,
+      startY: 20,
+    });
+
+    doc.save(`transactions_${period}_${new Date().toISOString().split('T')[0]}.pdf`);
+    setToast(`Downloaded ${period} statement as PDF!`);
+    setTimeout(() => setToast(""), 3000);
+  };
+
   /* CALCULATIONS */
   const income = transactions.filter((t) => t.type === "income").reduce((a, t) => a + t.amount, 0);
   const expenses = transactions.filter((t) => t.type === "expense").reduce((a, t) => a + t.amount, 0);
@@ -111,15 +171,15 @@ export default function App() {
   const categoryIcons = {
     Food: "restaurant", Transport: "commute", Bills: "bolt",
     Entertainment: "movie", Shopping: "shopping_bag", Health: "medical_services",
-    Travel: "flight", Housing: "home",
+    Travel: "flight", Housing: "home", General: "category",
   };
 
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: "grid_view" },
-    { id: "add", label: "Add Expense", icon: "add_circle" },
+    { id: "add", label: "Record Entry", icon: "add_circle" },
     { id: "history", label: "History", icon: "receipt_long" },
     { id: "budgets", label: "Budgets", icon: "account_balance_wallet" },
-    { id: "frequent", label: "Quick Pay", icon: "bolt" },
+    { id: "frequent", label: "Saved Templates", icon: "bookmark" },
     { id: "profile", label: "Profile", icon: "person" },
   ];
 
@@ -136,7 +196,7 @@ export default function App() {
   const inputBg = dm ? "bg-[#192540]" : "bg-surface-container-low";
   const textPrimary = dm ? "text-[#dee5ff]" : "text-on-surface";
   const textSecondary = dm ? "text-[#a3aac4]" : "text-on-surface-variant";
-  const textMuted = dm ? "text-[#6d758c]" : "text-slate-400";
+  const textMuted = dm ? "text-[#8b94ab]" : "text-slate-600";
   const borderColor = dm ? "border-[#40485d]/15" : "border-slate-100";
   const headerBg = dm ? "bg-[#060e20]/60" : "bg-white/80";
   const hoverBg = dm ? "hover:bg-[#192540]" : "hover:bg-slate-50";
@@ -160,11 +220,10 @@ export default function App() {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${
-                activeTab === tab.id
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left ${activeTab === tab.id
                   ? `${activeNavText} font-bold border-r-4 ${activeNavBorder} ${activeNavBg}`
                   : `${textSecondary} ${hoverBg} hover:${textPrimary}`
-              }`}
+                }`}
             >
               <Icon name={tab.icon} filled={activeTab === tab.id} className="text-xl" />
               <span>{tab.label}</span>
@@ -203,9 +262,8 @@ export default function App() {
         <nav className={`flex overflow-x-auto gap-1 px-2 py-2 ${sidebarBg} ${borderColor} border-b hide-scrollbar`}>
           {navItems.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium transition-all ${
-                activeTab === tab.id ? `${primaryBtnBg} text-white` : `${textSecondary}`
-              }`}>
+              className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium transition-all ${activeTab === tab.id ? `${primaryBtnBg} text-white` : `${textSecondary}`
+                }`}>
               <Icon name={tab.icon} className="text-base" />
               <span>{tab.label}</span>
             </button>
@@ -219,7 +277,18 @@ export default function App() {
         <header className={`hidden md:flex justify-between items-center w-full px-8 lg:px-12 py-4 sticky top-0 z-40 ${headerBg} backdrop-blur-xl shadow-sm`}>
           <div className="relative w-full max-w-sm">
             <Icon name="search" className={`absolute left-4 top-1/2 -translate-y-1/2 ${textMuted} text-lg`} />
-            <input className={`w-full pl-11 pr-4 py-2.5 ${inputBg} border-none rounded-full focus:ring-2 focus:ring-primary/20 text-sm placeholder:${textMuted} ${textPrimary}`} placeholder="Search transactions..." type="text" />
+            <input
+              className={`w-full pl-11 pr-10 py-2.5 ${inputBg} border-none rounded-full focus:ring-2 focus:ring-primary/20 text-sm placeholder:${textMuted} ${textPrimary}`}
+              placeholder="Search transactions..."
+              type="text"
+              value={searchQuery}
+              onChange={(e) => { setSearchQuery(e.target.value); if (e.target.value) setActiveTab("history"); }}
+            />
+            {searchQuery && (
+              <button onClick={() => setSearchQuery("")} className={`absolute right-3 top-1/2 -translate-y-1/2 ${textMuted} hover:${textPrimary}`}>
+                <Icon name="close" className="text-base" />
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-4">
             <button onClick={() => setDarkMode(!darkMode)} className={`p-2 ${textSecondary} hover:${textPrimary} transition-colors`}>
@@ -285,12 +354,12 @@ export default function App() {
                 {/* Budget & Insights */}
                 <div className="md:col-span-4 space-y-6 md:space-y-8">
                   <div className={`${dm ? "bg-[#69f6b8]" : "bg-[#006B37]"} text-white rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden group`}>
-                    <div className="absolute -right-8 -top-8 w-32 h-32 bg-white/10 rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700" />
-                    <p className="text-xs font-bold text-white/70 uppercase tracking-widest mb-2">Total Monthly Budget</p>
+                    <div className={`absolute -right-8 -top-8 w-32 h-32 ${dm ? "bg-[#005027]/10" : "bg-white/10"} rounded-full blur-2xl group-hover:scale-150 transition-transform duration-700`} />
+                    <p className={`text-xs font-bold ${dm ? "text-[#005027]/80" : "text-white/70"} uppercase tracking-widest mb-2`}>Total Monthly Budget</p>
                     <p className={`text-3xl md:text-4xl font-headline font-extrabold mb-6 ${dm ? "text-[#005027]" : "text-white"}`}>
                       ₹{totalBudget.toLocaleString()}
                     </p>
-                    <div className="w-full bg-white/20 h-2.5 rounded-full overflow-hidden mb-3">
+                    <div className={`w-full ${dm ? "bg-[#005027]/20" : "bg-white/20"} h-2.5 rounded-full overflow-hidden mb-3`}>
                       <div className={`${dm ? "bg-[#005027]" : "bg-white"} h-full rounded-full`} style={{ width: `${Math.min(budgetUsed, 100)}%` }} />
                     </div>
                     <p className={`text-xs font-medium ${dm ? "text-[#005027]/80" : "text-white/80"}`}>{budgetUsed}% of budget utilized</p>
@@ -358,11 +427,11 @@ export default function App() {
             </>
           )}
 
-          {/* ===================== ADD EXPENSE ===================== */}
+          {/* ===================== RECORD ENTRY ===================== */}
           {activeTab === "add" && (
             <>
               <section>
-                <h2 className={`text-3xl md:text-4xl font-headline font-extrabold ${textPrimary} tracking-tight`}>Add Expense</h2>
+                <h2 className={`text-3xl md:text-4xl font-headline font-extrabold ${textPrimary} tracking-tight`}>Record Entry</h2>
                 <p className={`${textSecondary} font-medium mt-1`}>Architecture your wealth, one entry at a time.</p>
               </section>
 
@@ -399,11 +468,10 @@ export default function App() {
                     <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
                       {categories.map((cat) => (
                         <button key={cat} onClick={() => setTransactionCategory(cat)}
-                          className={`flex flex-col items-center justify-center p-3 md:p-4 rounded-xl transition-all ${
-                            transactionCategory === cat
+                          className={`flex flex-col items-center justify-center p-3 md:p-4 rounded-xl transition-all ${transactionCategory === cat
                               ? "bg-primary-container text-on-primary-container ring-2 ring-primary"
                               : `${inputBg} ${textSecondary} ${hoverBg}`
-                          }`}>
+                            }`}>
                           <Icon name={categoryIcons[cat] || "category"} className="mb-1 md:mb-2" />
                           <span className="text-xs font-bold">{cat}</span>
                         </button>
@@ -460,49 +528,181 @@ export default function App() {
           )}
 
           {/* ===================== HISTORY ===================== */}
-          {activeTab === "history" && (
-            <>
-              <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
-                <div className="space-y-2">
-                  <h2 className={`text-3xl md:text-4xl font-extrabold font-headline tracking-tight ${textPrimary}`}>Transaction History</h2>
-                  <p className={`${textSecondary} text-base md:text-lg`}>A meticulous log of your financial architecture.</p>
-                </div>
-              </section>
+          {activeTab === "history" && (() => {
+            /* ---- filtered & sorted list ---- */
+            const filtered = transactions
+              .filter((t) => {
+                const q = searchQuery.toLowerCase();
+                const matchSearch = !q ||
+                  (t.description || "").toLowerCase().includes(q) ||
+                  t.category.toLowerCase().includes(q) ||
+                  String(t.amount).includes(q);
+                const matchType = filterType === "all" || t.type === filterType;
+                const matchCat = filterCategory === "all" || t.category === filterCategory;
+                const matchFrom = !filterDateFrom || t.date >= filterDateFrom;
+                const matchTo = !filterDateTo || t.date <= filterDateTo;
+                return matchSearch && matchType && matchCat && matchFrom && matchTo;
+              })
+              .sort((a, b) => {
+                if (sortOrder === "newest") return new Date(b.date) - new Date(a.date);
+                if (sortOrder === "oldest") return new Date(a.date) - new Date(b.date);
+                if (sortOrder === "highest") return b.amount - a.amount;
+                return a.amount - b.amount;
+              });
 
-              {transactions.length === 0 ? (
-                <div className={`${cardBg} rounded-3xl p-12 ${borderColor} border text-center`}>
-                  <Icon name="receipt_long" className={`text-6xl ${textMuted} mb-4`} />
-                  <p className={`font-bold text-lg ${textSecondary}`}>No transactions yet</p>
-                  <p className={`text-sm ${textMuted} mt-1`}>Add your first transaction to get started</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {transactions.slice().reverse().map((t) => (
-                    <div key={t.id} className={`${cardBg} p-4 md:p-5 rounded-xl flex items-center justify-between ${hoverBg} hover:shadow-md transition-all group ${borderColor} border border-l-4 border-l-transparent hover:border-l-primary`}>
-                      <div className="flex items-center gap-4 md:gap-5 min-w-0 flex-1">
-                        <div className={`w-10 h-10 md:w-12 md:h-12 ${dm ? "bg-[#192540]" : "bg-surface-container"} rounded-lg flex items-center justify-center ${greenAccent} group-hover:scale-110 transition-transform flex-shrink-0`}>
-                          <Icon name={categoryIcons[t.category] || "payments"} />
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className={`font-bold ${textPrimary} truncate`}>{t.description || t.category}</p>
-                          <p className={`text-xs ${textMuted}`}>{t.category} • {t.date}</p>
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-3 md:gap-4 flex-shrink-0 ml-4">
-                        <span className={`text-base md:text-lg font-bold font-headline ${t.type === "income" ? greenAccent : textPrimary}`}>
-                          {t.type === "income" ? "+" : "-"}₹{t.amount.toLocaleString()}
-                        </span>
-                        <button onClick={() => deleteTransaction(t.id)}
-                          className="p-1.5 rounded-full text-error/50 hover:text-error hover:bg-error/10 transition-all opacity-0 group-hover:opacity-100">
-                          <Icon name="delete" className="text-lg" />
+            const filteredIncome = filtered.filter(t => t.type === "income").reduce((s, t) => s + t.amount, 0);
+            const filteredExpenses = filtered.filter(t => t.type === "expense").reduce((s, t) => s + t.amount, 0);
+            const hasActiveFilter = filterType !== "all" || filterCategory !== "all" || filterDateFrom || filterDateTo || searchQuery;
+
+            const clearFilters = () => { setFilterType("all"); setFilterCategory("all"); setFilterDateFrom(""); setFilterDateTo(""); setSearchQuery(""); };
+
+            return (
+              <>
+                {/* Header */}
+                <section className="flex flex-col md:flex-row md:items-end justify-between gap-4 md:gap-6">
+                  <div className="space-y-2">
+                    <h2 className={`text-3xl md:text-4xl font-extrabold font-headline tracking-tight ${textPrimary}`}>Transaction History</h2>
+                    <p className={`${textSecondary} text-base md:text-lg`}>A meticulous log of your financial architecture.</p>
+                  </div>
+                  {hasActiveFilter && (
+                    <button onClick={clearFilters} className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold text-error border border-error/30 hover:bg-error/10 transition-all`}>
+                      <Icon name="filter_list_off" className="text-base" />
+                      Clear Filters
+                    </button>
+                  )}
+                </section>
+
+                {/* Filter Bar */}
+                <div className={`${cardBg} rounded-2xl p-4 md:p-5 ${borderColor} border flex flex-col gap-4`}>
+                  <div className="flex flex-wrap gap-3 items-center">
+                    {/* Type pills */}
+                    <div className="flex gap-2">
+                      {["all", "income", "expense"].map((t) => (
+                        <button key={t} onClick={() => setFilterType(t)}
+                          className={`px-4 py-1.5 rounded-full text-xs font-bold capitalize transition-all ${
+                            filterType === t
+                              ? t === "income" ? "bg-primary text-white" : t === "expense" ? "bg-error text-white" : `${primaryBtnBg} text-white`
+                              : `${inputBg} ${textSecondary} hover:opacity-80`
+                          }`}>
+                          {t === "all" ? "All Types" : t}
                         </button>
-                      </div>
+                      ))}
                     </div>
-                  ))}
+
+                    {/* Category dropdown */}
+                    <select
+                      value={filterCategory}
+                      onChange={(e) => setFilterCategory(e.target.value)}
+                      className={`${inputBg} border-none rounded-full py-1.5 px-4 text-xs font-bold ${textPrimary} focus:ring-2 focus:ring-primary/20`}>
+                      <option value="all">All Categories</option>
+                      {categories.map((c) => <option key={c} value={c}>{c}</option>)}
+                    </select>
+
+                    {/* Sort */}
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value)}
+                      className={`${inputBg} border-none rounded-full py-1.5 px-4 text-xs font-bold ${textPrimary} focus:ring-2 focus:ring-primary/20 ml-auto`}>
+                      <option value="newest">Newest First</option>
+                      <option value="oldest">Oldest First</option>
+                      <option value="highest">Highest Amount</option>
+                      <option value="lowest">Lowest Amount</option>
+                    </select>
+                  </div>
+
+                  {/* Date Range */}
+                  <div className="flex flex-wrap gap-3 items-center">
+                    <div className="flex items-center gap-2">
+                      <Icon name="calendar_today" className={`text-sm ${textMuted}`} />
+                      <span className={`text-xs font-semibold ${textMuted}`}>From</span>
+                      <input type="date" value={filterDateFrom} onChange={(e) => setFilterDateFrom(e.target.value)}
+                        className={`${inputBg} border-none rounded-lg py-1.5 px-3 text-xs ${textPrimary} focus:ring-2 focus:ring-primary/20`} />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className={`text-xs font-semibold ${textMuted}`}>To</span>
+                      <input type="date" value={filterDateTo} onChange={(e) => setFilterDateTo(e.target.value)}
+                        className={`${inputBg} border-none rounded-lg py-1.5 px-3 text-xs ${textPrimary} focus:ring-2 focus:ring-primary/20`} />
+                    </div>
+                    <span className={`text-xs ${textMuted} ml-auto`}>
+                      {filtered.length} result{filtered.length !== 1 ? "s" : ""}
+                    </span>
+                  </div>
                 </div>
-              )}
-            </>
-          )}
+
+                {/* Summary Strip */}
+                {filtered.length > 0 && (
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className={`${cardBg2} rounded-xl p-4 ${borderColor} border text-center`}>
+                      <p className={`text-xs font-bold uppercase tracking-widest ${textMuted} mb-1`}>Income</p>
+                      <p className={`text-lg font-headline font-extrabold ${greenAccent}`}>₹{filteredIncome.toLocaleString()}</p>
+                    </div>
+                    <div className={`${cardBg2} rounded-xl p-4 ${borderColor} border text-center`}>
+                      <p className={`text-xs font-bold uppercase tracking-widest ${textMuted} mb-1`}>Expenses</p>
+                      <p className="text-lg font-headline font-extrabold text-error">₹{filteredExpenses.toLocaleString()}</p>
+                    </div>
+                    <div className={`${cardBg2} rounded-xl p-4 ${borderColor} border text-center`}>
+                      <p className={`text-xs font-bold uppercase tracking-widest ${textMuted} mb-1`}>Net</p>
+                      <p className={`text-lg font-headline font-extrabold ${(filteredIncome - filteredExpenses) >= 0 ? greenAccent : "text-error"}`}>
+                        ₹{Math.abs(filteredIncome - filteredExpenses).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Transaction List */}
+                {transactions.length === 0 ? (
+                  <div className={`${cardBg} rounded-3xl p-12 ${borderColor} border text-center`}>
+                    <Icon name="receipt_long" className={`text-6xl ${textMuted} mb-4`} />
+                    <p className={`font-bold text-lg ${textSecondary}`}>No transactions yet</p>
+                    <p className={`text-sm ${textMuted} mt-1`}>Add your first transaction to get started</p>
+                  </div>
+                ) : filtered.length === 0 ? (
+                  <div className={`${cardBg} rounded-3xl p-12 ${borderColor} border text-center`}>
+                    <Icon name="search_off" className={`text-6xl ${textMuted} mb-4`} />
+                    <p className={`font-bold text-lg ${textSecondary}`}>No results found</p>
+                    <p className={`text-sm ${textMuted} mt-1`}>Try adjusting your filters or search term</p>
+                    <button onClick={clearFilters} className="mt-4 px-6 py-2 rounded-full bg-primary text-white text-sm font-bold hover:opacity-90 transition-all">
+                      Clear Filters
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {filtered.map((t) => (
+                      <div key={t.id} className={`${cardBg} p-4 md:p-5 rounded-xl flex items-center justify-between ${hoverBg} hover:shadow-md transition-all group ${borderColor} border border-l-4 ${
+                        t.type === "income" ? "border-l-primary" : "border-l-transparent hover:border-l-error"
+                      }`}>
+                        <div className="flex items-center gap-4 md:gap-5 min-w-0 flex-1">
+                          <div className={`w-10 h-10 md:w-12 md:h-12 ${
+                            t.type === "income" ? "bg-primary/10" : dm ? "bg-[#192540]" : "bg-surface-container"
+                          } rounded-lg flex items-center justify-center ${t.type === "income" ? greenAccent : textSecondary} group-hover:scale-110 transition-transform flex-shrink-0`}>
+                            <Icon name={categoryIcons[t.category] || "payments"} />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className={`font-bold ${textPrimary} truncate`}>{t.description || t.category}</p>
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className={`text-xs ${textMuted}`}>{t.date}</span>
+                              <span className={`text-xs px-2 py-0.5 rounded-full font-bold ${
+                                t.type === "income" ? "bg-primary/10 text-primary" : dm ? "bg-[#192540] text-[#a3aac4]" : "bg-slate-100 text-slate-500"
+                              }`}>{t.category}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3 md:gap-4 flex-shrink-0 ml-4">
+                          <span className={`text-base md:text-lg font-bold font-headline ${t.type === "income" ? greenAccent : textPrimary}`}>
+                            {t.type === "income" ? "+" : "-"}₹{t.amount.toLocaleString()}
+                          </span>
+                          <button onClick={() => deleteTransaction(t.id)}
+                            className="p-1.5 rounded-full text-error/50 hover:text-error hover:bg-error/10 transition-all opacity-0 group-hover:opacity-100">
+                            <Icon name="delete" className="text-lg" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            );
+          })()}
 
           {/* ===================== BUDGETS ===================== */}
           {activeTab === "budgets" && (
@@ -582,17 +782,17 @@ export default function App() {
             </>
           )}
 
-          {/* ===================== FREQUENT PAYMENTS ===================== */}
+          {/* ===================== SAVED TEMPLATES ===================== */}
           {activeTab === "frequent" && (
             <>
               <section>
-                <h2 className={`text-3xl md:text-4xl font-headline font-extrabold ${textPrimary} tracking-tight`}>Quick Payments</h2>
-                <p className={`${textSecondary} font-medium mt-1 text-base md:text-lg`}>Save and quickly add recurring expenses.</p>
+                <h2 className={`text-3xl md:text-4xl font-headline font-extrabold ${textPrimary} tracking-tight`}>Saved Templates</h2>
+                <p className={`${textSecondary} font-medium mt-1 text-base md:text-lg`}>Save and quickly add recurring or frequent entries.</p>
               </section>
 
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
                 <div className={`${cardBg} rounded-xl p-6 md:p-8 ${borderColor} border shadow-sm`}>
-                  <h3 className={`font-headline text-xl font-bold ${textPrimary} mb-6`}>Add Quick Payment</h3>
+                  <h3 className={`font-headline text-xl font-bold ${textPrimary} mb-6`}>Create Template</h3>
                   <div className="space-y-4">
                     <div>
                       <label className={`block text-sm font-semibold ${textSecondary} mb-2`}>Name</label>
@@ -619,7 +819,7 @@ export default function App() {
                 </div>
 
                 <div>
-                  <h3 className={`font-headline text-xl font-bold ${textPrimary} mb-6`}>Saved Payments</h3>
+                  <h3 className={`font-headline text-xl font-bold ${textPrimary} mb-6`}>Your Templates</h3>
                   {frequentPayments.length === 0 ? (
                     <div className={`${cardBg2} rounded-xl p-8 text-center ${borderColor} border`}>
                       <Icon name="bolt" className={`text-4xl ${textMuted} mb-2`} />
@@ -662,9 +862,13 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                 {/* Profile Card */}
                 <div className={`lg:col-span-1 ${cardBg} rounded-2xl p-6 md:p-8 ${borderColor} border shadow-sm flex flex-col items-center text-center`}>
-                  <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-4xl font-headline mb-6 shadow-lg shadow-primary/20">
-                    {avatarLetter}
-                  </div>
+                  {user?.user_metadata?.avatar_url ? (
+                    <img src={user.user_metadata.avatar_url} alt="Profile" className="w-24 h-24 rounded-full mb-6 shadow-lg shadow-primary/20 object-cover" />
+                  ) : (
+                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-4xl font-headline mb-6 shadow-lg shadow-primary/20">
+                      {avatarLetter}
+                    </div>
+                  )}
                   <h3 className={`font-headline text-xl font-bold ${textPrimary} mb-1`}>{displayName}</h3>
                   <p className={`text-sm ${textMuted} mb-6`}>{userEmail}</p>
                   <div className="w-full space-y-3">
@@ -702,9 +906,8 @@ export default function App() {
                     </h4>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <button onClick={() => setDarkMode(false)}
-                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
-                          !darkMode ? 'border-primary bg-primary/5' : `${borderColor} border ${hoverBg}`
-                        }`}>
+                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${!darkMode ? 'border-primary bg-primary/5' : `${borderColor} border ${hoverBg}`
+                          }`}>
                         <div className={`w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm`}>
                           <Icon name="light_mode" className="text-2xl text-amber-500" />
                         </div>
@@ -715,9 +918,8 @@ export default function App() {
                         {!darkMode && <Icon name="check_circle" filled className={`ml-auto ${greenAccent} text-xl`} />}
                       </button>
                       <button onClick={() => setDarkMode(true)}
-                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${
-                          darkMode ? 'border-primary bg-primary/5' : `${borderColor} border ${hoverBg}`
-                        }`}>
+                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${darkMode ? 'border-primary bg-primary/5' : `${borderColor} border ${hoverBg}`
+                          }`}>
                         <div className={`w-12 h-12 rounded-xl bg-[#0f1930] border border-[#40485d]/30 flex items-center justify-center shadow-sm`}>
                           <Icon name="dark_mode" className="text-2xl text-indigo-400" />
                         </div>
@@ -752,6 +954,31 @@ export default function App() {
                     </div>
                   </div>
 
+                  {/* Data Export */}
+                  <div className={`${cardBg} rounded-2xl p-6 md:p-8 ${borderColor} border shadow-sm`}>
+                    <h4 className={`font-headline text-lg font-bold ${textPrimary} mb-6 flex items-center gap-3`}>
+                      <Icon name="download" className={greenAccent} />
+                      Export Data
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      <button onClick={() => downloadPDF('daily')} className={`p-4 rounded-xl ${cardBg2} ${borderColor} border text-center hover:ring-2 hover:ring-primary/50 transition-all group`}>
+                        <Icon name="today" className={`text-2xl mb-2 ${textSecondary} group-hover:${greenAccent}`} />
+                        <p className={`font-bold text-sm ${textPrimary}`}>Daily</p>
+                        <p className={`text-xs ${textMuted}`}>Last 24 hours</p>
+                      </button>
+                      <button onClick={() => downloadPDF('weekly')} className={`p-4 rounded-xl ${cardBg2} ${borderColor} border text-center hover:ring-2 hover:ring-primary/50 transition-all group`}>
+                        <Icon name="date_range" className={`text-2xl mb-2 ${textSecondary} group-hover:${greenAccent}`} />
+                        <p className={`font-bold text-sm ${textPrimary}`}>Weekly</p>
+                        <p className={`text-xs ${textMuted}`}>Last 7 days</p>
+                      </button>
+                      <button onClick={() => downloadPDF('monthly')} className={`p-4 rounded-xl ${cardBg2} ${borderColor} border text-center hover:ring-2 hover:ring-primary/50 transition-all group`}>
+                        <Icon name="calendar_month" className={`text-2xl mb-2 ${textSecondary} group-hover:${greenAccent}`} />
+                        <p className={`font-bold text-sm ${textPrimary}`}>Monthly</p>
+                        <p className={`text-xs ${textMuted}`}>Last 30 days</p>
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Account Actions */}
                   <div className={`${cardBg} rounded-2xl p-6 md:p-8 ${borderColor} border shadow-sm`}>
                     <h4 className={`font-headline text-lg font-bold ${textPrimary} mb-6 flex items-center gap-3`}>
@@ -759,6 +986,35 @@ export default function App() {
                       Account
                     </h4>
                     <div className="space-y-3">
+                      <div className={`flex items-center justify-between p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
+                        <div className="flex flex-col w-full gap-2">
+                          <label className={`font-bold text-sm ${textPrimary}`}>Profile Picture URL</label>
+                          <div className="flex gap-2">
+                            <input 
+                              type="text" 
+                              placeholder="Paste image URL..." 
+                              className={`flex-1 ${inputBg} border-none rounded-lg px-3 py-2 text-sm ${textPrimary} focus:ring-2 focus:ring-primary/20`}
+                              value={avatarUrlInput}
+                              onChange={e => setAvatarUrlInput(e.target.value)}
+                            />
+                            <button 
+                              onClick={async () => {
+                                if(!avatarUrlInput) return;
+                                try {
+                                  await updateProfile({ avatar_url: avatarUrlInput });
+                                  setToast("Profile picture updated!");
+                                  setAvatarUrlInput("");
+                                } catch(e) {
+                                  setToast("Error updating picture");
+                                }
+                                setTimeout(() => setToast(""), 3000);
+                              }}
+                              className={`bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-all flex-shrink-0`}>
+                              Update
+                            </button>
+                          </div>
+                        </div>
+                      </div>
                       <div className={`flex items-center justify-between p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
                         <div className="flex items-center gap-3">
                           <Icon name="email" className={textSecondary} />
@@ -798,6 +1054,13 @@ export default function App() {
           className="md:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-on-primary shadow-2xl flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-all">
           <Icon name="add" className="text-3xl" />
         </button>
+      )}
+
+      {toast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 bg-[#192540] text-white border border-primary/20 rounded-full shadow-2xl z-[100] font-bold text-sm flex items-center gap-2 transition-all">
+          <Icon name="info" className="text-primary text-lg" />
+          {toast}
+        </div>
       )}
     </div>
   );

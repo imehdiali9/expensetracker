@@ -37,6 +37,14 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
+  // Google Login
+  const loginWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+    });
+    if (error) throw error;
+  };
+
   // Logout function
   const logout = async () => {
     const { error } = await supabase.auth.signOut();
@@ -58,6 +66,14 @@ export const AuthProvider = ({ children }) => {
       password: newPassword
     });
 
+    if (error) throw error;
+  };
+
+  // Update profile data (like avatar URL)
+  const updateProfile = async (data) => {
+    const { error } = await supabase.auth.updateUser({
+      data: data
+    });
     if (error) throw error;
   };
 
@@ -96,9 +112,11 @@ export const AuthProvider = ({ children }) => {
     user,
     signup,
     login,
+    loginWithGoogle,
     logout,
     resetPassword,
     updatePassword,
+    updateProfile,
     loading
   };
 
