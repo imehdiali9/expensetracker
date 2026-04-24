@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
 import jsPDF from "jspdf";
-import "jspdf-autotable";
+import autoTable from "jspdf-autotable";
 
 const Icon = ({ name, filled, className = "" }) => (
   <span
@@ -75,6 +75,8 @@ export default function App() {
     setAmount("");
     setDate("");
     setDescription("");
+    setToast(`${type === 'income' ? 'Income' : 'Expense'} recorded successfully!`);
+    setTimeout(() => setToast(""), 3000);
   };
 
   const deleteTransaction = (id) => {
@@ -150,7 +152,7 @@ export default function App() {
       tableRows.push(rowData);
     });
 
-    doc.autoTable({
+    autoTable(doc, {
       head: [tableColumn],
       body: tableRows,
       startY: 20,
@@ -183,9 +185,10 @@ export default function App() {
     { id: "profile", label: "Profile", icon: "person" },
   ];
 
-  const displayName = user?.user_metadata?.display_name || "User";
+  const displayName = user?.user_metadata?.display_name || user?.user_metadata?.full_name || "User";
   const userEmail = user?.email || "";
   const avatarLetter = displayName.charAt(0).toUpperCase();
+  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
   /* DARK MODE CLASSES */
   const dm = darkMode;
@@ -234,9 +237,13 @@ export default function App() {
         {/* Profile Section */}
         <div className="mt-auto px-4 pb-6 space-y-3">
           <button onClick={() => setActiveTab("profile")} className={`w-full flex items-center gap-3 p-3 rounded-xl ${activeTab === "profile" ? activeNavBg + " ring-1 ring-primary/30" : cardBg2} ${borderColor} border hover:ring-1 hover:ring-primary/20 transition-all cursor-pointer text-left`}>
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-              {avatarLetter}
-            </div>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="w-10 h-10 rounded-full object-cover flex-shrink-0 shadow-sm" />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
+                {avatarLetter}
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <p className={`font-bold text-sm truncate ${textPrimary}`}>{displayName}</p>
               <p className={`text-xs truncate ${textMuted}`}>{userEmail}</p>
@@ -254,9 +261,13 @@ export default function App() {
             <button onClick={() => setDarkMode(!darkMode)} className={`p-2 rounded-full ${textSecondary}`}>
               <Icon name={darkMode ? "light_mode" : "dark_mode"} className="text-xl" />
             </button>
-            <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-xs">
-              {avatarLetter}
-            </div>
+            {avatarUrl ? (
+              <img src={avatarUrl} alt="Avatar" className="w-8 h-8 rounded-full object-cover shadow-sm" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-xs">
+                {avatarLetter}
+              </div>
+            )}
           </div>
         </header>
         <nav className={`flex overflow-x-auto gap-1 px-2 py-2 ${sidebarBg} ${borderColor} border-b hide-scrollbar`}>
@@ -898,39 +909,6 @@ export default function App() {
 
                 {/* Settings */}
                 <div className="lg:col-span-2 space-y-6">
-                  {/* Appearance */}
-                  <div className={`${cardBg} rounded-2xl p-6 md:p-8 ${borderColor} border shadow-sm`}>
-                    <h4 className={`font-headline text-lg font-bold ${textPrimary} mb-6 flex items-center gap-3`}>
-                      <Icon name="palette" className={greenAccent} />
-                      Appearance
-                    </h4>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      <button onClick={() => setDarkMode(false)}
-                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${!darkMode ? 'border-primary bg-primary/5' : `${borderColor} border ${hoverBg}`
-                          }`}>
-                        <div className={`w-12 h-12 rounded-xl bg-white border border-slate-200 flex items-center justify-center shadow-sm`}>
-                          <Icon name="light_mode" className="text-2xl text-amber-500" />
-                        </div>
-                        <div className="text-left">
-                          <p className={`font-bold ${textPrimary}`}>Light Mode</p>
-                          <p className={`text-xs ${textMuted}`}>Clean and bright</p>
-                        </div>
-                        {!darkMode && <Icon name="check_circle" filled className={`ml-auto ${greenAccent} text-xl`} />}
-                      </button>
-                      <button onClick={() => setDarkMode(true)}
-                        className={`flex items-center gap-4 p-4 rounded-xl border-2 transition-all ${darkMode ? 'border-primary bg-primary/5' : `${borderColor} border ${hoverBg}`
-                          }`}>
-                        <div className={`w-12 h-12 rounded-xl bg-[#0f1930] border border-[#40485d]/30 flex items-center justify-center shadow-sm`}>
-                          <Icon name="dark_mode" className="text-2xl text-indigo-400" />
-                        </div>
-                        <div className="text-left">
-                          <p className={`font-bold ${textPrimary}`}>Dark Mode</p>
-                          <p className={`text-xs ${textMuted}`}>Easy on the eyes</p>
-                        </div>
-                        {darkMode && <Icon name="check_circle" filled className={`ml-auto ${greenAccent} text-xl`} />}
-                      </button>
-                    </div>
-                  </div>
 
                   {/* Financial Overview */}
                   <div className={`${cardBg} rounded-2xl p-6 md:p-8 ${borderColor} border shadow-sm`}>

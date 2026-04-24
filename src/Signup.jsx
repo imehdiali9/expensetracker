@@ -7,6 +7,7 @@ export default function Signup() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
+  const [avatarUrl, setAvatarUrl] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -25,7 +26,7 @@ export default function Signup() {
     if (password.length < 6) return setError('Password must be at least 6 characters');
     try {
       setError(''); setLoading(true);
-      await signup(email, password, displayName);
+      await signup(email, password, displayName, avatarUrl);
       navigate('/');
     } catch (err) {
       setError('Failed to create account. ' + err.message);
@@ -97,6 +98,13 @@ export default function Signup() {
                 <input id="name" type="text"
                   className="w-full h-11 px-3.5 bg-[#192540]/80 border-none rounded-lg text-sm text-white placeholder:text-white/30 focus:ring-2 focus:ring-[#69f6b8]/50 transition-all"
                   placeholder="Alex Sterling" value={displayName} onChange={(e) => setDisplayName(e.target.value)} required />
+              </div>
+
+              <div className="space-y-1.5">
+                <label htmlFor="avatar" className="font-label text-[11px] font-semibold text-[#a3aac4] uppercase tracking-wider block">Profile Picture URL (Optional)</label>
+                <input id="avatar" type="url"
+                  className="w-full h-11 px-3.5 bg-[#192540]/80 border-none rounded-lg text-sm text-white placeholder:text-white/30 focus:ring-2 focus:ring-[#69f6b8]/50 transition-all"
+                  placeholder="https://example.com/avatar.jpg" value={avatarUrl} onChange={(e) => setAvatarUrl(e.target.value)} />
               </div>
 
               <div className="space-y-1.5">

@@ -11,13 +11,14 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   // Sign up function
-  const signup = async (email, password, displayName) => {
+  const signup = async (email, password, displayName, avatarUrl) => {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
           display_name: displayName,
+          ...(avatarUrl ? { avatar_url: avatarUrl } : {})
         }
       }
     });
