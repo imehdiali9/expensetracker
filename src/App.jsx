@@ -80,36 +80,34 @@ export default function App() {
     if (user) setLocalAvatarUrl(localStorage.getItem(`avatar_${user.id}`));
   }, [user]);
 
-  const handleImageUpload = (e) => {
+  const handleImageUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const img = new Image();
-      img.onload = async () => {
-        const canvas = document.createElement("canvas");
-        const ctx = canvas.getContext("2d");
-        const MAX_SIZE = 150;
-        let width = img.width;
-        let height = img.height;
-        if (width > height) {
-          if (width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; }
-        } else {
-          if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
-        }
-        canvas.width = width;
-        canvas.height = height;
-        ctx.drawImage(img, 0, 0, width, height);
-        const base64Url = canvas.toDataURL("image/jpeg", 0.8);
-        localStorage.setItem(`avatar_${user.id}`, base64Url);
-        setLocalAvatarUrl(base64Url);
-        setToast("Profile picture uploaded!");
-        setTimeout(() => setToast(""), 3000);
-        try { await updateProfile({ custom_avatar_url: base64Url }); } catch (e) {}
-      };
-      img.src = event.target.result;
-    };
-    reader.readAsDataURL(file);
+
+    setToast("Uploading to Supabase...");
+    
+    const fileExt = file.name.split('.').pop();
+    const filePath = `${user.id}.${fileExt}`;
+    
+    // Note: Assuming bucket name is 'avatars'
+    const { error: uploadError } = await supabase.storage
+      .from('avatars')
+      .upload(filePath, file, { upsert: true });
+      
+    if (uploadError) {
+      setToast("Upload error: " + uploadError.message);
+      setTimeout(() => setToast(""), 4000);
+      return;
+    }
+    
+    const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+    const publicUrl = data.publicUrl;
+    
+    localStorage.setItem(`avatar_${user.id}`, publicUrl);
+    setLocalAvatarUrl(publicUrl);
+    setToast("Profile picture uploaded!");
+    setTimeout(() => setToast(""), 3000);
+    try { await updateProfile({ custom_avatar_url: publicUrl }); } catch (err) {}
   };
   
   const [toast, setToast] = useState("");
