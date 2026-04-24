@@ -43,7 +43,10 @@ export default function App() {
       if (txs) setTransactions(txs);
 
       const { data: cats } = await supabase.from("categories").select("*").eq("user_id", user.id);
-      if (cats && cats.length > 0) setCategories(cats.map(c => c.name || c.category || c.title || "Unnamed"));
+      if (cats && cats.length > 0) {
+        const fetchedCats = cats.map(c => c.name || c.category || c.title || "Unnamed");
+        setCategories(prev => Array.from(new Set([...prev, ...fetchedCats])));
+      }
 
       const { data: bgts } = await supabase.from("budgets").select("*").eq("user_id", user.id);
       if (bgts && bgts.length > 0) {
