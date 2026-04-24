@@ -109,7 +109,7 @@ A huge thanks to everyone who built this project together! 🙌
 
 | Name | Role |
 |------|------|
-| **Mehdi** | Developer |
+| **Mehdi** | Developer, Maintainer |
 | **Hafiz** | Developer |
 | **Joash** | Developer |
 
