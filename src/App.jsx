@@ -29,10 +29,25 @@ export default function App() {
   }, [darkMode]);
 
   /* STATE */
+  const getSaved = (key, defaultVal) => {
+    if (!user) return defaultVal;
+    const saved = localStorage.getItem(`${user.id}_${key}`);
+    return saved ? JSON.parse(saved) : defaultVal;
+  };
+
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [categories, setCategories] = useState(["Food", "Transport", "Bills", "General"]);
-  const [transactions, setTransactions] = useState([]);
-  const [budgets, setBudgets] = useState({});
+  const [categories, setCategories] = useState(() => getSaved("categories", ["Food", "Transport", "Bills", "General"]));
+  const [transactions, setTransactions] = useState(() => getSaved("transactions", []));
+  const [budgets, setBudgets] = useState(() => getSaved("budgets", {}));
+  const [frequentPayments, setFrequentPayments] = useState(() => getSaved("frequent", []));
+
+  useEffect(() => {
+    if (!user) return;
+    localStorage.setItem(`${user.id}_categories`, JSON.stringify(categories));
+    localStorage.setItem(`${user.id}_transactions`, JSON.stringify(transactions));
+    localStorage.setItem(`${user.id}_budgets`, JSON.stringify(budgets));
+    localStorage.setItem(`${user.id}_frequent`, JSON.stringify(frequentPayments));
+  }, [categories, transactions, budgets, frequentPayments, user]);
 
   const [amount, setAmount] = useState("");
   const [transactionCategory, setTransactionCategory] = useState("Food");
@@ -44,7 +59,6 @@ export default function App() {
   const [budgetInput, setBudgetInput] = useState("");
   const [newCategory, setNewCategory] = useState("");
 
-  const [frequentPayments, setFrequentPayments] = useState([]);
   const [paymentName, setPaymentName] = useState("");
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentCategory, setPaymentCategory] = useState("Food");
