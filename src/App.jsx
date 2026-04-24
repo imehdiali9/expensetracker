@@ -249,7 +249,7 @@ export default function App() {
   const displayName = user?.user_metadata?.display_name || user?.user_metadata?.full_name || "User";
   const userEmail = user?.email || "";
   const avatarLetter = displayName.charAt(0).toUpperCase();
-  const avatarUrl = user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
+  const avatarUrl = user?.user_metadata?.custom_avatar_url || user?.user_metadata?.avatar_url || user?.user_metadata?.picture;
 
   /* DARK MODE CLASSES */
   const dm = darkMode;
@@ -1040,7 +1040,7 @@ export default function App() {
                               onClick={async () => {
                                 if(!avatarUrlInput) return;
                                 try {
-                                  await updateProfile({ avatar_url: avatarUrlInput });
+                                  await updateProfile({ custom_avatar_url: avatarUrlInput });
                                   setToast("Profile picture updated!");
                                   setAvatarUrlInput("");
                                 } catch(e) {

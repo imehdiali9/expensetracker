@@ -18,7 +18,7 @@ export const AuthProvider = ({ children }) => {
       options: {
         data: {
           display_name: displayName,
-          ...(avatarUrl ? { avatar_url: avatarUrl } : {})
+          ...(avatarUrl ? { custom_avatar_url: avatarUrl } : {})
         }
       }
     });
