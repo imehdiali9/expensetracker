@@ -968,8 +968,8 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                 {/* Profile Card */}
                 <div className={`lg:col-span-1 ${cardBg} rounded-2xl p-6 md:p-8 ${borderColor} border shadow-sm flex flex-col items-center text-center`}>
-                  {user?.user_metadata?.avatar_url ? (
-                    <img src={user.user_metadata.avatar_url} alt="Profile" className="w-24 h-24 rounded-full mb-6 shadow-lg shadow-primary/20 object-cover" />
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt="Profile" className="w-24 h-24 rounded-full mb-6 shadow-lg shadow-primary/20 object-cover" />
                   ) : (
                     <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-4xl font-headline mb-6 shadow-lg shadow-primary/20">
                       {avatarLetter}
