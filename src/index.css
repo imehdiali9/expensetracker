@@ -7,6 +7,15 @@
     font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior-y: none;
+    -webkit-user-select: none;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-touch-callout: none;
+  }
+  input, textarea, select {
+    -webkit-user-select: auto;
+    user-select: auto;
   }
   .font-headline {
     font-family: 'Manrope', sans-serif;

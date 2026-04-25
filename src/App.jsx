@@ -273,12 +273,12 @@ export default function App() {
   };
 
   const navItems = [
-    { id: "dashboard", label: "Dashboard", icon: "grid_view" },
-    { id: "add", label: "Record Entry", icon: "add_circle" },
-    { id: "history", label: "History", icon: "receipt_long" },
-    { id: "budgets", label: "Budgets", icon: "account_balance_wallet" },
-    { id: "frequent", label: "Saved Templates", icon: "bookmark" },
-    { id: "profile", label: "Profile", icon: "person" },
+    { id: "dashboard", label: "Dashboard", short: "Home", icon: "grid_view" },
+    { id: "add", label: "Record Entry", short: "Add", icon: "add_circle" },
+    { id: "history", label: "History", short: "History", icon: "receipt_long" },
+    { id: "budgets", label: "Budgets", short: "Budgets", icon: "account_balance_wallet" },
+    { id: "frequent", label: "Saved Templates", short: "Templates", icon: "bookmark" },
+    { id: "profile", label: "Profile", short: "Profile", icon: "person" },
   ];
 
   const displayName = user?.user_metadata?.display_name || user?.user_metadata?.full_name || "User";
@@ -368,20 +368,10 @@ export default function App() {
             </div>
           </div>
         </header>
-        <nav className={`flex overflow-x-auto gap-1 px-2 py-2 ${sidebarBg} ${borderColor} border-b hide-scrollbar`}>
-          {navItems.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-              className={`flex items-center gap-2 px-4 py-2 rounded-full whitespace-nowrap text-xs font-medium transition-all ${activeTab === tab.id ? `${primaryBtnBg} text-white` : `${textSecondary}`
-                }`}>
-              <Icon name={tab.icon} className="text-base" />
-              <span>{tab.label}</span>
-            </button>
-          ))}
-        </nav>
       </div>
 
       {/* MAIN CONTENT */}
-      <main className="flex-1 flex flex-col min-w-0">
+      <main className="flex-1 flex flex-col min-w-0 pb-20 md:pb-0">
         {/* Top Header (Desktop) */}
         <header className={`hidden md:flex justify-between items-center w-full px-8 lg:px-12 py-4 sticky top-0 z-40 ${headerBg} backdrop-blur-xl shadow-sm`}>
           <div className="relative w-full max-w-sm">
@@ -971,13 +961,19 @@ export default function App() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
                 {/* Profile Card */}
                 <div className={`lg:col-span-1 ${cardBg} rounded-2xl p-6 md:p-8 ${borderColor} border shadow-sm flex flex-col items-center text-center`}>
-                  {avatarUrl ? (
-                    <img src={avatarUrl} alt="Profile" className="w-24 h-24 rounded-full mb-6 shadow-lg shadow-primary/20 object-cover" />
-                  ) : (
-                    <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-4xl font-headline mb-6 shadow-lg shadow-primary/20">
-                      {avatarLetter}
-                    </div>
-                  )}
+                  <div className="relative mb-6">
+                    {avatarUrl ? (
+                      <img src={avatarUrl} alt="Profile" className="w-24 h-24 rounded-full shadow-lg shadow-primary/20 object-cover" />
+                    ) : (
+                      <div className="w-24 h-24 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-4xl font-headline shadow-lg shadow-primary/20">
+                        {avatarLetter}
+                      </div>
+                    )}
+                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" id="main-avatar-upload" />
+                    <label htmlFor="main-avatar-upload" className={`absolute -bottom-3 left-1/2 -translate-x-1/2 px-3 py-1 bg-primary text-white text-[10px] font-bold rounded-full shadow-md cursor-pointer whitespace-nowrap hover:scale-105 active:scale-95 transition-all`}>
+                      Change profile picture
+                    </label>
+                  </div>
                   <h3 className={`font-headline text-xl font-bold ${textPrimary} mb-1`}>{displayName}</h3>
                   <p className={`text-sm ${textMuted} mb-6`}>{userEmail}</p>
                   <div className="w-full space-y-3">
@@ -1089,32 +1085,6 @@ export default function App() {
                             </button>
                           </div>
                         </div>
-                        <div className="w-full h-px bg-slate-200 dark:bg-[#40485d]/30"></div>
-                        <div className="flex flex-col w-full gap-3">
-                          <label className={`font-bold text-sm ${textPrimary}`}>Profile Picture</label>
-                          <div className="flex items-center gap-4">
-                            {avatarUrl ? (
-                              <img src={avatarUrl} alt="Avatar" className="w-16 h-16 rounded-full object-cover shadow-sm" />
-                            ) : (
-                              <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-container flex items-center justify-center text-white font-bold text-xl">
-                                {avatarLetter}
-                              </div>
-                            )}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleImageUpload}
-                              className="hidden"
-                              id="avatar-upload"
-                            />
-                            <label
-                              htmlFor="avatar-upload"
-                              className={`px-4 py-2 ${cardBg} border ${borderColor} ${textPrimary} font-bold text-sm rounded-lg hover:opacity-80 cursor-pointer transition-all shadow-sm`}
-                            >
-                              Upload Image
-                            </label>
-                          </div>
-                        </div>
                       </div>
                       <div className={`flex items-center justify-between p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
                         <div className="flex items-center gap-3">
@@ -1152,10 +1122,24 @@ export default function App() {
       {/* Mobile FAB */}
       {activeTab !== "add" && (
         <button onClick={() => setActiveTab("add")}
-          className="md:hidden fixed bottom-6 right-6 w-14 h-14 rounded-full bg-primary text-on-primary shadow-2xl flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-all">
+          className="md:hidden fixed bottom-24 right-6 w-14 h-14 rounded-full bg-primary text-on-primary shadow-2xl flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-all">
           <Icon name="add" className="text-3xl" />
         </button>
       )}
+
+      {/* MOBILE BOTTOM NAV */}
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${sidebarBg} ${borderColor} border-t pb-[env(safe-area-inset-bottom)]`}>
+        <nav className="flex justify-around items-center px-2 py-2">
+          {navItems.map((tab) => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id)}
+              className={`flex flex-col items-center gap-1 p-2 rounded-xl transition-all ${activeTab === tab.id ? `${activeNavText}` : `${textSecondary}`
+                }`}>
+              <Icon name={tab.icon} className="text-2xl" filled={activeTab === tab.id} />
+              <span className="text-[10px] font-bold">{tab.short}</span>
+            </button>
+          ))}
+        </nav>
+      </div>
 
       {toast && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 px-6 py-3 bg-[#192540] text-white border border-primary/20 rounded-full shadow-2xl z-[100] font-bold text-sm flex items-center gap-2 transition-all">

@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState } from 'react';
 import { supabase } from './supabase';
+import { Capacitor } from '@capacitor/core';
+import { App as CapacitorApp } from '@capacitor/app';
 
 const AuthContext = createContext({});
 
@@ -40,10 +42,12 @@ export const AuthProvider = ({ children }) => {
 
   // Google Login
   const loginWithGoogle = async () => {
+    const isNative = Capacitor.isNativePlatform();
+    const redirectTo = isNative ? 'com.ali.ledger://login-callback' : window.location.origin;
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin
+        redirectTo
       }
     });
     if (error) throw error;
@@ -101,6 +105,24 @@ export const AuthProvider = ({ children }) => {
         clearTimeout(timeout);
       });
 
+    // Listen for deep links in native app
+    let appUrlListener = null;
+    if (Capacitor.isNativePlatform()) {
+      CapacitorApp.addListener('appUrlOpen', (event) => {
+        const urlParams = new URL(event.url);
+        if (urlParams.hash) {
+          const hashParams = new URLSearchParams(urlParams.hash.substring(1));
+          const access_token = hashParams.get('access_token');
+          const refresh_token = hashParams.get('refresh_token');
+          if (access_token && refresh_token) {
+            supabase.auth.setSession({ access_token, refresh_token });
+          }
+        }
+      }).then(listener => {
+        appUrlListener = listener;
+      });
+    }
+
     // Listen for changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
@@ -109,6 +131,9 @@ export const AuthProvider = ({ children }) => {
     return () => {
       clearTimeout(timeout);
       subscription.unsubscribe();
+      if (appUrlListener) {
+        appUrlListener.remove();
+      }
     };
   }, []);
 
