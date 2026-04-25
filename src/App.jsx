@@ -85,7 +85,7 @@ export default function App() {
     const file = e.target.files[0];
     if (!file) return;
 
-    setToast("Uploading to Supabase...");
+    setToast("Uploading...");
     
     const fileExt = file.name.split('.').pop();
     const filePath = `${user.id}.${fileExt}`;
@@ -346,6 +346,9 @@ export default function App() {
             </div>
             <Icon name="chevron_right" className={`text-lg ${textMuted} flex-shrink-0`} />
           </button>
+          <div className="pt-4 text-center">
+            <p className="text-[10px] text-[#8b94ab] font-medium tracking-widest uppercase">Developed By the Mehdi, Joash and Hafiz</p>
+          </div>
         </div>
       </aside>
 
@@ -937,10 +940,23 @@ export default function App() {
                               <p className={`text-xs ${textMuted}`}>{p.category} • ₹{p.amount}</p>
                             </div>
                           </div>
-                          <button onClick={() => handleFrequentPayment(p)}
-                            className="bg-primary text-on-primary px-4 py-2 rounded-full text-xs font-bold hover:opacity-90 active:scale-95 transition-all flex-shrink-0 ml-4">
-                            Quick Add
-                          </button>
+                          <div className="flex items-center gap-2 flex-shrink-0 ml-4">
+                            <button onClick={() => handleFrequentPayment(p)}
+                              className="bg-primary text-on-primary px-4 py-2 rounded-full text-xs font-bold hover:opacity-90 active:scale-95 transition-all shadow-md hidden sm:block">
+                              Quick Add
+                            </button>
+                            <button onClick={() => handleFrequentPayment(p)}
+                              className="bg-primary text-on-primary w-8 h-8 rounded-full flex items-center justify-center hover:opacity-90 active:scale-95 transition-all shadow-md sm:hidden">
+                              <Icon name="add" className="text-base" />
+                            </button>
+                            <button onClick={async () => {
+                                const { error } = await supabase.from('frequent_payments').delete().eq('id', p.id);
+                                if (!error) setFrequentPayments(prev => prev.filter(item => item.id !== p.id));
+                              }}
+                              className={`p-2 rounded-full ${textMuted} hover:bg-error/10 hover:text-error transition-all`}>
+                              <Icon name="delete" className="text-lg" />
+                            </button>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -984,25 +1000,74 @@ export default function App() {
                       </div>
                       <span className={`text-sm font-bold ${textPrimary}`}>{user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' }) : 'N/A'}</span>
                     </div>
-                    <div className={`flex items-center justify-between p-3 rounded-xl ${cardBg2} ${borderColor} border`}>
+                    <button onClick={() => setActiveTab('history')} className={`w-full flex items-center justify-between p-3 rounded-xl ${cardBg2} ${borderColor} border hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer`}>
                       <div className="flex items-center gap-3">
                         <Icon name="receipt_long" className={`${textSecondary}`} />
                         <span className={`text-sm ${textSecondary}`}>Transactions</span>
                       </div>
-                      <span className={`text-sm font-bold ${textPrimary}`}>{transactions.length}</span>
-                    </div>
-                    <div className={`flex items-center justify-between p-3 rounded-xl ${cardBg2} ${borderColor} border`}>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-bold ${textPrimary}`}>{transactions.length}</span>
+                        <Icon name="chevron_right" className={`text-lg ${textMuted}`} />
+                      </div>
+                    </button>
+                    <button onClick={() => setActiveTab('add')} className={`w-full flex items-center justify-between p-3 rounded-xl ${cardBg2} ${borderColor} border hover:ring-2 hover:ring-primary/50 transition-all cursor-pointer`}>
                       <div className="flex items-center gap-3">
                         <Icon name="category" className={`${textSecondary}`} />
                         <span className={`text-sm ${textSecondary}`}>Categories</span>
                       </div>
-                      <span className={`text-sm font-bold ${textPrimary}`}>{categories.length}</span>
-                    </div>
+                      <div className="flex items-center gap-2">
+                        <span className={`text-sm font-bold ${textPrimary}`}>{categories.length}</span>
+                        <Icon name="chevron_right" className={`text-lg ${textMuted}`} />
+                      </div>
+                    </button>
                   </div>
                 </div>
 
                 {/* Settings */}
                 <div className="lg:col-span-2 space-y-6">
+
+                  {/* Account Actions */}
+                  <div className={`${cardBg} rounded-2xl p-6 md:p-8 ${borderColor} border shadow-sm`}>
+                    <h4 className={`font-headline text-lg font-bold ${textPrimary} mb-6 flex items-center gap-3`}>
+                      <Icon name="settings" className={greenAccent} />
+                      Account
+                    </h4>
+                    <div className="space-y-3">
+                      <div className={`flex flex-col gap-4 p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
+                        <div className="flex flex-col w-full gap-1.5">
+                          <label className={`font-bold text-sm ${textPrimary}`}>Display Name</label>
+                          <input 
+                            type="text" 
+                            placeholder="Enter your name..." 
+                            className={`w-full ${inputBg} border-none rounded-lg px-4 py-3 text-sm ${textPrimary} focus:ring-2 focus:ring-primary/30 transition-all shadow-inner`}
+                            value={displayNameInput !== "" ? displayNameInput : displayName}
+                            onChange={e => setDisplayNameInput(e.target.value)}
+                            onBlur={async () => {
+                              const newName = displayNameInput !== "" ? displayNameInput : displayName;
+                              if(!newName || newName === displayName) return;
+                              try {
+                                await updateProfile({ display_name: newName });
+                                setToast("Name updated successfully");
+                              } catch(e) {
+                                setToast("Error updating name");
+                              }
+                              setTimeout(() => setToast(""), 3000);
+                            }}
+                          />
+                          <p className={`text-[10px] ${textMuted}`}>Your name is saved automatically when you click outside the box.</p>
+                        </div>
+                      </div>
+                      <div className={`flex items-center justify-between p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <Icon name="email" className={textSecondary} />
+                          <div className="min-w-0">
+                            <p className={`font-bold text-sm ${textPrimary}`}>Email</p>
+                            <p className={`text-xs ${textMuted} truncate`}>{userEmail}</p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
 
                   {/* Financial Overview */}
                   <div className={`${cardBg} rounded-2xl p-6 md:p-8 ${borderColor} border shadow-sm`}>
@@ -1050,68 +1115,15 @@ export default function App() {
                       </button>
                     </div>
                   </div>
-
-                  {/* Account Actions */}
-                  <div className={`${cardBg} rounded-2xl p-6 md:p-8 ${borderColor} border shadow-sm`}>
-                    <h4 className={`font-headline text-lg font-bold ${textPrimary} mb-6 flex items-center gap-3`}>
-                      <Icon name="settings" className={greenAccent} />
-                      Account
-                    </h4>
-                    <div className="space-y-3">
-                      <div className={`flex flex-col gap-5 p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
-                        <div className="flex flex-col w-full gap-3">
-                          <label className={`font-bold text-sm ${textPrimary}`}>Display Name</label>
-                          <div className="flex gap-2">
-                            <input 
-                              type="text" 
-                              placeholder="Enter your name..." 
-                              className={`flex-1 ${inputBg} border-none rounded-lg px-3 py-2 text-sm ${textPrimary} focus:ring-2 focus:ring-primary/20`}
-                              value={displayNameInput || displayName}
-                              onChange={e => setDisplayNameInput(e.target.value)}
-                            />
-                            <button 
-                              onClick={async () => {
-                                if(!displayNameInput || displayNameInput === displayName) return;
-                                try {
-                                  await updateProfile({ display_name: displayNameInput });
-                                  setToast("Name updated!");
-                                } catch(e) {
-                                  setToast("Error updating name");
-                                }
-                                setTimeout(() => setToast(""), 3000);
-                              }}
-                              className={`bg-primary text-white px-4 py-2 rounded-lg text-xs font-bold hover:opacity-90 transition-all flex-shrink-0`}>
-                              Save
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`flex items-center justify-between p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
-                        <div className="flex items-center gap-3">
-                          <Icon name="email" className={textSecondary} />
-                          <div>
-                            <p className={`font-bold text-sm ${textPrimary}`}>Email</p>
-                            <p className={`text-xs ${textMuted}`}>{userEmail}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`flex items-center justify-between p-4 rounded-xl ${cardBg2} ${borderColor} border`}>
-                        <div className="flex items-center gap-3">
-                          <Icon name="badge" className={textSecondary} />
-                          <div>
-                            <p className={`font-bold text-sm ${textPrimary}`}>Display Name</p>
-                            <p className={`text-xs ${textMuted}`}>{displayName}</p>
-                          </div>
-                        </div>
-                      </div>
-                      <button onClick={handleLogout}
-                        className="w-full mt-4 flex items-center justify-center gap-3 p-4 rounded-xl bg-error/10 text-error hover:bg-error/20 transition-all font-bold">
-                        <Icon name="logout" />
-                        Sign Out
-                      </button>
-                    </div>
-                  </div>
                 </div>
+              </div>
+              <div className="w-full max-w-sm mx-auto mt-12 flex flex-col items-center gap-6 pb-6">
+                <button onClick={handleLogout}
+                  className="w-full flex items-center justify-center gap-3 p-4 rounded-xl bg-error/10 text-error hover:bg-error/20 transition-all font-bold shadow-sm">
+                  <Icon name="logout" />
+                  Sign Out
+                </button>
+                <p className={`text-[10px] ${textMuted} font-medium tracking-widest uppercase text-center`}>Developed By the Mehdi, Joash and Hafiz</p>
               </div>
             </>
           )}
@@ -1128,7 +1140,7 @@ export default function App() {
       )}
 
       {/* MOBILE BOTTOM NAV */}
-      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${sidebarBg} ${borderColor} border-t pb-[env(safe-area-inset-bottom)]`}>
+      <div className={`md:hidden fixed bottom-0 left-0 right-0 z-50 ${headerBg} backdrop-blur-xl ${borderColor} border-t pb-[env(safe-area-inset-bottom)]`}>
         <nav className="flex justify-around items-center px-2 py-2">
           {navItems.map((tab) => (
             <button key={tab.id} onClick={() => setActiveTab(tab.id)}
